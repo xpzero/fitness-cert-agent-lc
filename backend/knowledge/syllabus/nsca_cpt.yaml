@@ -1,0 +1,83 @@
+# NSCA-CPT（国际四大认证）考点树 — 初稿
+# 证书：NSCA-CPT 为主攻（四大中唯一中国官网可直报、有中文考试）
+# 结构按 CPT 通用领域组织，与 ACE/NASM/ACSM 高度重合，四大证备考通用。
+# 状态：draft（按公开考试领域整理，待用户四大证资料目录校准！拿到资料后按 TOC 对齐章节）
+# 来源：research-report.md §1.3（NSCA-Shanghai 官网/Pearson VUE 报名、140 计分题+15 不计分、3 小时）
+cert: nsca_cpt
+name: NSCA-CPT（私人教练认证）
+draft: true   # true 时评测脚本拒绝将其作为金标准基准
+
+theory:
+  - id: T01
+    chapter: 运动科学基础（解剖与生物力学）
+    points:
+      - {id: T01.1, title: 骨骼肌肉系统解剖（主要骨/关节/肌群）}
+      - {id: T01.2, title: 关节运动与肌肉功能（主动肌/拮抗肌/协同肌）}
+      - {id: T01.3, title: 生物力学原理（力矩/杠杆/动作平面）}
+      - {id: T01.4, title: 肌肉收缩类型与肌纤维特性}
+  - id: T02
+    chapter: 运动生理学
+    points:
+      - {id: T02.1, title: 能量系统（磷酸原/糖酵解/有氧氧化）}
+      - {id: T02.2, title: 心血管与呼吸对运动的反应/适应}
+      - {id: T02.3, title: 激素与恢复、过度训练综合征}
+      - {id: T02.4, title: 抗阻训练的神经适应与肌肉肥大机制}
+  - id: T03
+    chapter: 营养与补剂
+    points:
+      - {id: T03.1, title: 宏量营养素与运动表现（糖/蛋白/脂肪）}
+      - {id: T03.2, title: 能量平衡与体重管理（增肌/减脂）}
+      - {id: T03.3, title: 运动前中后的营养补充时机}
+      - {id: T03.4, title: 常见补剂的功效证据与安全性}
+  - id: T04
+    chapter: 客户筛查与健康评估
+    points:
+      - {id: T04.1, title: PAR-Q+ 等健康筛查与风险分层}
+      - {id: T04.2, title: 静息与运动心率/血压评估}
+      - {id: T04.3, title: 身体成分评估方法（皮褶/BIA 等）}
+      - {id: T04.4, title: 姿势与动作质量筛查（FMS 思想）}
+  - id: T05
+    chapter: 体适能测试与解读
+    points:
+      - {id: T05.1, title: 心肺适能测试（台阶/1.5 英里跑/次极量测试）}
+      - {id: T05.2, title: 肌力肌耐力测试（1RM 估算法/俯卧撑测试）}
+      - {id: T05.3, title: 柔韧测试（坐姿体前屈等）}
+      - {id: T05.4, title: 测试结果解读与常模对照}
+  - id: T06
+    chapter: 程序设计原则与方法
+    points:
+      - {id: T06.1, title: 训练原则（超负荷/渐进/特异性/可逆/个体化）}
+      - {id: T06.2, title: FITT-VP 与周期化（线性/非线性）}
+      - {id: T06.3, title: 抗阻训练变量（动作选择/顺序/负荷/次数/组间休息）}
+      - {id: T06.4, title: 有氧与柔韧程序设计}
+  - id: T07
+    chapter: 抗阻训练技术
+    points:
+      - {id: T07.1, title: 器械/自由重量/自重动作技术要点}
+      - {id: T07.2, title: 常见动作错误与纠正（深蹲/卧推/硬拉等）}
+      - {id: T07.3, title: 保护技术（spotting）与训练安全}
+      - {id: T07.4, title: 进阶与退阶（regression/progression）策略}
+  - id: T08
+    chapter: 特殊人群与运动安全
+    points:
+      - {id: T08.1, title: 高血压/糖尿病/肥胖人群运动指导}
+      - {id: T08.2, title: 老年人/青少年/孕期运动考虑}
+      - {id: T08.3, title: 运动损伤的应急处理与转介}
+      - {id: T08.4, title: 心血管疾病风险与运动禁忌}
+  - id: T09
+    chapter: 客户咨询与职业行为
+    points:
+      - {id: T09.1, title: 行为改变理论与动机访谈（SMART 目标）}
+      - {id: T09.2, title: 有效沟通与知情同意}
+      - {id: T09.3, title: 职业伦理/责任与执业范围}
+      - {id: T09.4, title: 私教业务基础（课程结构/文档记录）}
+
+practice:  # NSCA 无国内实操考试（机考 140 题），此节为面试/模拟教学自选用
+  - id: P01
+    chapter: 动作教学口播（模拟教学自选）
+    points:
+      - {id: P01.1, title: 六项口播框架（目标肌群/起始姿势/动作过程/呼吸/保护/注意事项）}
+      - {id: P01.2, title: 客户视角的教学语言（避免专业术语堆砌）}
+
+fees_note: NSCA-CPT 中国区认证考试费约 2180 元；ACSM-CPT 约 9800（含培训）；NASM-CPT 约 7800-8600；ACE-CPT 约 359+399 美元
+reference_textbooks: NSCA-CPT 中文版教材（备考资料以上传的四大证资料为准）

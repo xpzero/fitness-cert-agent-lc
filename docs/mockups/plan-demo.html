@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="UTF-8"><title>备考规划 · 改版设计稿</title>
+<link rel="stylesheet" href="base.css">
+<style>
+.hero { display:flex; gap:16px; margin-bottom:6px; }
+.countdown { flex:1.2; background:linear-gradient(135deg,#E8590C,#F59E0B); color:#fff;
+             border-radius:12px; padding:16px 20px; }
+.countdown .d { font-size:38px; font-weight:800; }
+.countdown .t { font-size:13px; opacity:.92; }
+.phase-strip { display:flex; gap:10px; margin:12px 0; }
+.phase { flex:1; border:1px solid #E2E8F0; border-radius:10px; padding:10px 14px; background:#fff; }
+.phase.cur { border-color:#E8590C; background:#FFF4E6; box-shadow:0 0 0 2px #FFE0CC; }
+.phase.done { opacity:.65; }
+.phase .pn { font-size:13px; font-weight:700; }
+.phase .pw { font-size:11px; color:#64748B; margin:2px 0 6px; }
+.pbar { height:6px; background:#F1F5F9; border-radius:99px; overflow:hidden; }
+.pbar i { display:block; height:100%; background:#16A34A; border-radius:99px; }
+.phase.cur .pbar i { background:#E8590C; }
+.week { border:1px solid #E2E8F0; border-radius:12px; padding:14px 16px; }
+.day { display:flex; gap:10px; margin-bottom:8px; }
+.day .dt { width:64px; flex:none; text-align:center; font-size:11px; color:#64748B;
+           border-right:2px solid #FFE0CC; padding-right:10px; }
+.day .dt b { display:block; font-size:15px; color:#E8590C; }
+.task { display:flex; align-items:center; gap:8px; font-size:12.5px; padding:5px 0; }
+.cb { width:17px; height:17px; border-radius:5px; border:1.5px solid #CBD5E1; flex:none; }
+.cb.on { background:#16A34A; border-color:#16A34A; color:#fff; font-size:11px;
+         display:flex; align-items:center; justify-content:center; }
+.strike { text-decoration:line-through; color:#94A3B8; }
+.hitl { border:1.5px dashed #E8590C; border-radius:12px; background:#FFFBF7; padding:14px 16px; }
+.stat-row { display:flex; gap:12px; }
+</style></head><body>
+<div class="app">
+  <div class="topbar"><h1>🏋️ 健身私教考证 Agent</h1><span class="cap">备考规划 · 改版设计稿</span></div>
+  <div class="tabs">
+    <div class="tab">💬 对话</div><div class="tab">🔎 官方入口</div><div class="tab">📚 知识库</div>
+    <div class="tab">✏️ 刷题</div><div class="tab active">🗓 备考规划</div><div class="tab">🎤 口播陪练</div>
+  </div>
+  <div class="body">
+
+    <!-- 顶部：目标卡 + 倒计时（对标考研倒计时类 app：天数/有效学习日分层） -->
+    <div class="hero">
+      <div class="countdown">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <span class="d">45</span><span class="t">天后考试</span>
+          <span class="t" style="margin-left:auto;">2026-11-20 · 新国职（初级）</span>
+        </div>
+        <div class="t" style="margin-top:6px;">剩余有效学习日 32 天（周末 ×9）· 每周 10 小时 · 累计已学 26.5h</div>
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <span class="btn sm" style="background:#fff; color:#E8590C;">📋 重新生成计划</span>
+          <span class="btn sm" style="background:rgba(255,255,255,.2);">🖨 导出打印版</span>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; gap:12px;">
+        <div class="metric" style="flex:1;"><div class="v">24/38</div><div class="l">考点已覆盖</div><div class="mini">题目覆盖 63%</div></div>
+        <div class="metric" style="flex:1;"><div class="v">18.5h</div><div class="l">本周已学 / 10h</div><div class="mini">连续打卡 6 天 🔥</div></div>
+        <div class="metric" style="flex:1;"><div class="v">71→78</div><div class="l">模考分趋势</div><div class="mini">近 2 次 ↑7</div></div>
+      </div>
+    </div>
+
+    <!-- 阶段时间线（当前阶段高亮） -->
+    <div class="sec-title">阶段计划</div>
+    <div class="phase-strip">
+      <div class="phase done"><div class="pn">① 基础扫盲</div><div class="pw">第 1–2 周 · T01/T02/T03</div>
+        <div class="pbar"><i style="width:100%"></i></div><div class="mini">✅ 完成 10-05</div></div>
+      <div class="phase cur"><div class="pn">② 强化 + 专项刷题</div><div class="pw">第 3–5 周 · T04–T07</div>
+        <div class="pbar"><i style="width:55%"></i></div><div class="mini">进行中 · 第 9 / 16 天</div></div>
+      <div class="phase"><div class="pn">③ 模考冲刺</div><div class="pw">第 6–7 周 · 全真模考 ×3</div>
+        <div class="pbar"><i style="width:0%"></i></div><div class="mini">待开始</div></div>
+      <div class="phase"><div class="pn">④ 考前回炉</div><div class="pw">最后 3 天 · 错题 + 口播</div>
+        <div class="pbar"><i style="width:0%"></i></div><div class="mini">待开始</div></div>
+    </div>
+
+    <div style="display:flex; gap:14px;">
+      <!-- 本周任务打卡（对标打卡 app：周视图 + checkbox） -->
+      <div class="week" style="flex:1.4;">
+        <div class="sec-title" style="margin-top:0;">本周任务（第 9 周 · 强化阶段）</div>
+        <div class="day"><div class="dt"><b>周一</b>10-13</div>
+          <div><div class="task"><span class="cb on">✓</span><span class="strike">T04 体适能：教材 P11-12 + 10 题</span></div>
+          <div class="task"><span class="cb on">✓</span><span class="strike">错题复习（3 题到期）</span></div></div></div>
+        <div class="day"><div class="dt"><b>周二</b>10-14</div>
+          <div><div class="task"><span class="cb on">✓</span><span class="strike">T05 抗阻技术：动作卡片 20 个</span></div>
+          <div class="task"><span class="cb"></span><span>口播陪练 ×2（抽签动作）</span></div></div></div>
+        <div class="day"><div class="dt"><b>周三</b>10-15</div>
+          <div><div class="task"><span class="cb"></span><span>T05/T06：伸展 + FITT 原则 15 题</span></div>
+          <div class="task"><span class="cb"></span><span style="color:#E8590C;">🗓 加练：T02 解剖 20 题（模考联动）</span></div></div></div>
+        <div class="mini">周四–周日任务 6 项 ▾</div>
+      </div>
+
+      <!-- HITL 确认区（改版保留核心交互，样式强化） -->
+      <div style="flex:1;">
+        <div class="sec-title" style="margin-top:0;">计划草稿 · 待你确认</div>
+        <div class="hitl">
+          <div style="font-size:12.5px; margin-bottom:8px;">
+            <b>推荐路径：</b>主攻 新国职（初级）<span class="mini">（国内认可度最高）</span><br>
+            <b>阶段结构：</b>基础 2 周 → 强化 3 周 → 模考 2 周（共 7 周，每周 10h）
+          </div>
+          <input style="width:100%; border:1px solid #E2E8F0; border-radius:8px; padding:8px 10px;
+                 font-size:12.5px; margin-bottom:8px;" value="周末要加班，周六任务减半">
+          <div style="display:flex; gap:8px;">
+            <span class="btn">✅ 确认生效</span>
+            <span class="btn ghost">🔁 按意见重生成</span>
+          </div>
+          <div class="mini" style="margin-top:8px;">LangGraph HITL：确认前可无限轮调整；跨重启可恢复草稿</div>
+        </div>
+        <div class="card" style="border-left-color:#16A34A; border-color:#BBF7D0; background:#F0FDF4;">
+          <b>模考联动记录</b><br>
+          <span class="mini">10-12 模考 71 分 → 自动加练 T02（解剖）<br>10-14 模考 78 分 → 维持原计划 ✔</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body></html>

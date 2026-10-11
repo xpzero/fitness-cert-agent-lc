@@ -1,0 +1,38 @@
+[project]
+name = "fitness-cert-agent"
+version = "0.1.0"
+description = "健身私教考证 Agent — LangGraph 多子图 + 溯源 RAG"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.4",
+    "langgraph-checkpoint-postgres>=2.0",  # PostgresSaver：HITL 中断草稿跨进程持久化
+    "langchain>=1.0,<2",  # init_chat_model 工厂（provider 参数化，换厂商改 .env）
+    "langchain-openai>=1.0,<2",  # OpenAI 兼容协议 provider（智谱两套 base_url 走它）
+    "langchain-core>=0.3",
+    "psycopg[binary,pool]>=3.2",
+    "sqlalchemy>=2.0",
+    "pgvector>=0.3",
+    "fastapi>=0.115",
+    "uvicorn>=0.32",
+    "sse-starlette>=2.1",
+    "httpx>=0.27",
+    "pyyaml>=6.0",
+    "pymupdf>=1.24",
+    "pyobjc-framework-Vision>=10; sys_platform == 'darwin'",  # 扫描页 OCR 走系统 Vision（macOS 专用绑定）
+    "Pillow>=10; sys_platform == 'darwin'",
+    "langfuse>=2.50,<3",  # 服务端用 langfuse/langfuse:2 镜像，SDK 必须锁 v2 协议
+    "python-dotenv>=1.0",
+    "fastembed>=0.8",  # 本地 ONNX embedding（bge-small-zh 基线）
+    "ipython>=9.17.1",
+    "python-multipart>=0.0.9",
+]
+
+[project.optional-dependencies]
+ocr = ["paddleocr>=2.8"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+

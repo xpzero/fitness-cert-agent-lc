@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>知识库管理 · 改版设计稿</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,"PingFang SC","Segoe UI",sans-serif; background:#F0F2F5;
+         display:flex; justify-content:center; padding:24px; color:#1F2933; }
+  .app { width:1180px; background:#fff; border-radius:12px; overflow:hidden;
+         box-shadow:0 2px 12px rgba(0,0,0,.08); }
+  /* 顶栏（模拟 Streamlit 侧栏后的主区顶） */
+  .topbar { display:flex; align-items:center; gap:10px; padding:14px 22px 6px; }
+  .topbar h1 { font-size:19px; }
+  .topbar .cap { color:#64748B; font-size:12.5px; margin-left:8px; }
+  .tabs { display:flex; gap:6px; padding:8px 22px 14px; border-bottom:1px solid #E2E8F0; }
+  .tab { padding:7px 14px; font-size:13.5px; color:#64748B; border-radius:8px 8px 0 0; cursor:default; }
+  .tab.active { color:#E8590C; font-weight:600; border-bottom:2.5px solid #E8590C; background:#FFF4E6; }
+  .body { padding:18px 22px 26px; }
+  .sec-title { font-size:14.5px; font-weight:700; margin:14px 0 8px; }
+  .hint { color:#64748B; font-size:12px; margin-bottom:10px; }
+  /* 指标卡 */
+  .metrics { display:flex; gap:14px; }
+  .metric { flex:1; background:#FFF9F2; border:1px solid #FFE0CC; border-radius:10px; padding:12px 16px; }
+  .metric .v { font-size:22px; font-weight:700; color:#E8590C; }
+  .metric .l { font-size:12px; color:#B45309; margin-top:2px; }
+  .metric .d { font-size:11px; color:#9A3412; }
+  /* 上传区 */
+  .upload-row { display:flex; gap:14px; align-items:stretch; }
+  .drop { flex:1; border:2px dashed #FFC299; border-radius:10px; background:#FFFBF7;
+          padding:18px; text-align:center; color:#B45309; font-size:13px; }
+  .drop .big { font-size:15px; font-weight:600; }
+  .drop .types { font-size:11.5px; color:#C08A5A; margin-top:4px; }
+  .upload-side { width:300px; background:#FFF9F2; border:1px solid #FFE0CC; border-radius:10px; padding:12px 14px; font-size:12.5px; }
+  .btn { display:inline-block; background:#E8590C; color:#fff; border:none; border-radius:7px;
+         padding:7px 14px; font-size:12.5px; font-weight:600; }
+  .btn.ghost { background:#fff; color:#E8590C; border:1px solid #E8590C; }
+  .btn.sm { padding:3px 9px; font-size:11.5px; border-radius:6px; }
+  .btn.red { color:#fff; background:#DC2626; }
+  /* 文档表格 */
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; font-size:12px; color:#64748B; border-bottom:1.5px solid #E2E8F0; padding:8px 10px; background:#F8FAFC; }
+  td { padding:10px; border-bottom:1px solid #EEF2F6; vertical-align:middle; }
+  .pill { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:99px; font-size:11.5px; font-weight:600; }
+  .pill.ok { background:#DCFCE7; color:#15803D; }
+  .pill.parsing { background:#FEF3C7; color:#B45309; }
+  .pill.fail { background:#FEE2E2; color:#B91C1C; }
+  .dot { width:7px; height:7px; border-radius:50%; }
+  .pill.ok .dot { background:#22C55E; } .pill.parsing .dot { background:#F59E0B; } .pill.fail .dot { background:#EF4444; }
+  .auth { font-size:11.5px; padding:2px 8px; border-radius:6px; }
+  .a1 { background:#FFEDD5; color:#C2410C; } .a2 { background:#FEF9C3; color:#A16207; } .a3 { background:#E0F2FE; color:#0369A1; }
+  .bar { height:6px; background:#FDE8D8; border-radius:99px; width:110px; overflow:hidden; display:inline-block; vertical-align:middle; }
+  .bar i { display:block; height:100%; background:#E8590C; border-radius:99px; }
+  .mini { font-size:11px; color:#94A3B8; }
+  .fname { font-weight:600; }
+  .sub { font-size:11px; color:#94A3B8; }
+  /* chunk 展开行 */
+  tr.exp td { background:#FFFBF7; }
+  .chunk { border:1px solid #FFE0CC; border-left:4px solid #E8590C; border-radius:8px;
+           padding:8px 12px; margin:6px 0; font-size:12px; background:#fff; }
+  .chunk b.id { color:#B45309; font-family:ui-monospace,monospace; font-size:11px; }
+  /* 检索试驾 & 评测 */
+  .two-col { display:flex; gap:14px; }
+  .panel { flex:1; border:1px solid #E2E8F0; border-radius:10px; padding:14px; }
+  .seg { display:inline-flex; border:1px solid #E8590C; border-radius:8px; overflow:hidden; }
+  .seg span { padding:4px 12px; font-size:12px; color:#E8590C; }
+  .seg span.on { background:#E8590C; color:#fff; }
+  input.q { width:100%; border:1px solid #E2E8F0; border-radius:8px; padding:8px 12px; font-size:13px; margin:8px 0; }
+  .hit { border:1px solid #FFE0CC; border-left:4px solid #E8590C; border-radius:8px; background:#FFF9F2;
+         padding:8px 12px; margin:6px 0; font-size:12px; }
+  .hit .meta { color:#B45309; font-size:11.5px; }
+  .scorebox { display:flex; gap:10px; margin:10px 0; }
+  .score { flex:1; text-align:center; border:1px solid #E2E8F0; border-radius:8px; padding:8px; }
+  .score .v { font-size:19px; font-weight:700; }
+  .score .v.good { color:#16A34A; } .score .v.mid { color:#D97706; }
+  .miss { background:#FEF2F2; border-left:4px solid #DC2626; border-radius:8px; padding:8px 12px; margin:6px 0; font-size:12px; }
+  .note { margin-top:14px; font-size:11.5px; color:#94A3B8; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1>🏋️ 健身私教考证 Agent</h1>
+    <span class="cap">知识库管理 · P5 设计稿（M1-M4）</span>
+  </div>
+  <div class="tabs">
+    <div class="tab">💬 对话</div><div class="tab">🔎 官方入口</div>
+    <div class="tab active">📚 知识库</div><div class="tab">✏️ 刷题</div>
+    <div class="tab">🗓 备考规划</div><div class="tab">🎤 口播陪练</div>
+  </div>
+  <div class="body">
+
+    <!-- M1: 指标卡 -->
+    <div class="metrics">
+      <div class="metric"><div class="v">5</div><div class="l">文档</div><div class="d">4 已索引 · 1 解析中</div></div>
+      <div class="metric"><div class="v">268</div><div class="l">Chunks</div><div class="d">官方 69 · 半官方 87 · 补充 112</div></div>
+      <div class="metric"><div class="v">24</div><div class="l">已验证题目</div><div class="d">覆盖率 24/38 考点</div></div>
+      <div class="metric"><div class="v">0.80</div><div class="l">库级 Recall@5</div><div class="d">上次评测 10-06</div></div>
+    </div>
+
+    <!-- M1: 上传区 -->
+    <div class="sec-title">上传文档</div>
+    <div class="upload-row">
+      <div class="drop">
+        <div class="big">⬆️ 拖拽文件到此处，或点击选择（支持多选）</div>
+        <div class="types">.md / .txt 直接解析　·　.pdf 自动识别文字层或扫描件（扫描件走 Vision OCR）</div>
+      </div>
+      <div class="upload-side">
+        <div style="margin-bottom:6px; color:#64748B;">权威级（影响检索加权）</div>
+        <div style="margin-bottom:10px;">
+          <label><input type="radio" checked> 官方（1.05）　教材/大纲</label><br>
+          <label><input type="radio"> 半官方（1.00）　机构讲义</label><br>
+          <label><input type="radio"> 补充（0.95）　网络笔记</label>
+        </div>
+        <button class="btn">上传并解析</button>
+        <span class="mini">　扫描 PDF 约 3-4 分钟，可离开此页</span>
+      </div>
+    </div>
+
+    <!-- M1/M2: 文档表格 -->
+    <div class="sec-title">文档列表</div>
+    <div class="hint">状态自动刷新（3s 轮询）· 删除前检查题目引用 · 点击行展开 chunk</div>
+    <table>
+      <tr><th style="width:34%">文件</th><th>状态 / 进度</th><th>Chunks</th><th>权威级</th><th>页码</th><th style="width:220px">操作</th></tr>
+      <tr>
+        <td><div class="fname">官方工作手册-培训大纲与考核实施细则.pdf</div><div class="sub">4.7 MB · 上传 10-06 14:17</div></td>
+        <td><span class="pill ok"><span class="dot"></span>已索引</span></td>
+        <td>69</td><td><span class="auth a1">官方</span></td><td>P1–P54</td>
+        <td><button class="btn sm">📊 召回评测</button> <button class="btn sm ghost">重新解析</button> <button class="btn sm red">删除</button></td>
+      </tr>
+      <tr class="exp">
+        <td colspan="6">
+          <div class="chunk"><b class="id">…b0660df-17</b> ｜ P17 §体能测试
+            （1）动作要求：坐于垫上，双腿并拢，踝关节90度，屈体向前用双手触碰脚尖。（2）合格标准 ①男子初、中级均为：双手中指触碰到脚尖…</div>
+          <div class="chunk"><b class="id">…b0660df-16</b> ｜ P16 §专业技能测评内容
+            初级：1.职业形象（6分）…2.抗阻训练（46分）：器械/史密斯机/杠铃/哑铃/自重动作库抽签…</div>
+          <div class="mini">共 69 块，显示前 2 块 ▾</div>
+        </td>
+      </tr>
+      <tr>
+        <td><div class="fname">健身教练教材扫描件.pdf</div><div class="sub">126 MB · 240 页 · 刚上传</div></td>
+        <td><span class="pill parsing"><span class="dot"></span>OCR 识别中</span><br>
+            <span class="bar"><i style="width:42%"></i></span> <span class="mini">101/240 页</span></td>
+        <td>—</td><td><span class="auth a1">官方</span></td><td>—</td>
+        <td><button class="btn sm ghost" disabled>取消</button></td>
+      </tr>
+      <tr>
+        <td><div class="fname">CBBA 考试大纲 2026.pdf</div><div class="sub">文字层 PDF · 1.2 MB</div></td>
+        <td><span class="pill parsing"><span class="dot"></span>向量化中</span><br>
+            <span class="bar"><i style="width:75%"></i></span> <span class="mini">embed 24/32 批</span></td>
+        <td>32*</td><td><span class="auth a2">半官方</span></td><td>—</td>
+        <td><button class="btn sm ghost">取消</button></td>
+      </tr>
+      <tr>
+        <td><div class="fname">健身教练国职-知识点汇总.md</div><div class="sub">网络公开整理 · 7 来源</div></td>
+        <td><span class="pill ok"><span class="dot"></span>已索引</span></td>
+        <td>48</td><td><span class="auth a3">补充</span></td><td>—</td>
+        <td><button class="btn sm">📊 召回评测</button> <button class="btn sm ghost">重新解析</button> <button class="btn sm red">删除</button></td>
+      </tr>
+      <tr>
+        <td><div class="fname">NSCA-CPT 章节笔记.docx</div><div class="sub">不支持 docx？不，转换失败样例</div></td>
+        <td><span class="pill fail"><span class="dot"></span>解析失败</span><br><span class="mini">格式不支持：.docx 请另存为 .md/.txt</span></td>
+        <td>—</td><td><span class="auth a3">补充</span></td><td>—</td>
+        <td><button class="btn sm ghost">重试</button> <button class="btn sm red">删除</button></td>
+      </tr>
+    </table>
+
+    <!-- M3 + M4 -->
+    <div class="two-col" style="margin-top:16px;">
+      <div class="panel">
+        <div class="sec-title" style="margin-top:0;">检索试驾 <span class="mini">（模式切换 · 分数构成）</span></div>
+        <div class="seg"><span>混合</span><span class="on">语义</span><span>词面</span></div>
+        <input class="q" value="坐姿体前屈的合格标准">
+        <div class="hit"><b>#1</b> <span class="meta">P17 §体能测试 · 权威1 · 0.0131</span><br>（1）动作要求：坐于垫上，双腿并拢，踝关节90度…<br><span class="mini">dense #1 ｜ sparse #2 ｜ RRF 融合</span></div>
+        <div class="hit"><b>#2</b> <span class="meta">P48 §评分表 · 权威1 · 0.0126</span><br>附件4：健身教练职业能力体能测试评分表…</div>
+        <div class="hit"><b>#3</b> <span class="meta">2.8 生物力学 · 权威3 · 0.0119</span><br>- 肌肉收缩形式：向心（缩短做正功）…</div>
+      </div>
+      <div class="panel">
+        <div class="sec-title" style="margin-top:0;">📊 单文档召回评测 <span class="mini">（官方工作手册 · 刚跑完）</span></div>
+        <div class="scorebox">
+          <div class="score"><div class="v good">0.88</div><div class="mini">Recall@5</div></div>
+          <div class="score"><div class="v mid">0.61</div><div class="mini">MRR@5</div></div>
+          <div class="score"><div class="v">8</div><div class="mini">样本题</div></div>
+          <div class="score"><div class="v">1</div><div class="mini">未命中</div></div>
+        </div>
+        <div class="miss"><b>❌ miss</b>：保护技术中轻重量与大重量杠铃下蹲的区别？<br>
+          <span class="mini">期望 …b0660df-21 ｜ 实际 top3：P22 / P39 / P12（近义 chunk 未含关键差异段）</span></div>
+        <div class="hit" style="background:#F0FDF4;border-color:#BBF7D0;border-left-color:#16A34A;">
+          <b>✅ 7 条命中</b><span class="mini">　含 2 条近义等价 chunk（已按 embedding ≥0.80 并入相关集）</span></div>
+        <div class="note">自动流程：采样 8 chunk → LLM 生成考生问题 → hybrid_search → 指标 + miss 清单；结果可存档对比（回归）</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

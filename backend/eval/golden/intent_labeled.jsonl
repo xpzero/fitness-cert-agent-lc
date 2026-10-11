@@ -1,0 +1,99 @@
+{"text": "卧推主要练哪块肌肉？", "expect": "qa"}
+{"text": "什么是离心收缩？", "expect": "qa"}
+{"text": "硬拉的常见错误有哪些", "expect": "qa"}
+{"text": "心率区间怎么算", "expect": "qa"}
+{"text": "蛋白质每天该吃多少", "expect": "qa"}
+{"text": "静态拉伸和动态拉伸的区别是什么", "expect": "qa"}
+{"text": "深蹲时腰疼是什么原因", "expect": "qa"}
+{"text": "HIIT 是什么意思", "expect": "qa"}
+{"text": "运动前为什么要热身", "expect": "qa"}
+{"text": "肌肉增长的原理是什么", "expect": "qa"}
+{"text": "什么是最大摄氧量", "expect": "qa"}
+{"text": "平板支撑能练到核心吗", "expect": "qa"}
+{"text": "减脂期间要做力量训练吗", "expect": "qa"}
+{"text": "乳酸阈是什么", "expect": "qa"}
+{"text": "关节活动度怎么评估", "expect": "qa"}
+{"text": "有氧运动和无氧运动的区别", "expect": "qa"}
+{"text": "新学员体测都测什么项目", "expect": "qa"}
+{"text": "什么是渐进超负荷", "expect": "qa"}
+{"text": "BMI 怎么计算", "expect": "qa"}
+{"text": "运动后肌肉酸痛正常吗", "expect": "qa"}
+{"text": "糖原是什么", "expect": "qa"}
+{"text": "肩关节稳定性怎么练", "expect": "qa"}
+{"text": "什么是有氧耐力", "expect": "qa"}
+{"text": "训练容量怎么安排", "expect": "qa"}
+{"text": "什么是 RM", "expect": "qa"}
+{"text": "杠铃和哑铃卧推有什么不同", "expect": "qa"}
+{"text": "体脂率多少算健康", "expect": "qa"}
+{"text": "运动性疲劳怎么恢复", "expect": "qa"}
+{"text": "出一道题考考我", "expect": "quizgen"}
+{"text": "来份模拟卷", "expect": "quizgen"}
+{"text": "给我出五道营养学的题", "expect": "quizgen"}
+{"text": "出个多选题练练", "expect": "quizgen"}
+{"text": "考我一道训练原理的题", "expect": "quizgen"}
+{"text": "帮我出两道解剖题", "expect": "quizgen"}
+{"text": "来道判断题", "expect": "quizgen"}
+{"text": "出题", "expect": "quizgen"}
+{"text": "再出一道难一点的", "expect": "quizgen"}
+{"text": "给我来一组模拟题", "expect": "quizgen"}
+{"text": "出个单项选择题", "expect": "quizgen"}
+{"text": "来道题检验一下学习效果", "expect": "quizgen"}
+{"text": "出一道关于心肺耐力的题", "expect": "quizgen"}
+{"text": "NSCA 和 ACE 怎么选", "expect": "planning"}
+{"text": "报考 NSCA 需要什么条件", "expect": "planning"}
+{"text": "四大证书对比一下", "expect": "planning"}
+{"text": "学习计划帮我做一个", "expect": "planning"}
+{"text": "NSCA 考试费多少钱", "expect": "planning"}
+{"text": "ACE 报名流程是什么", "expect": "planning"}
+{"text": "我想考个证，哪个适合我", "expect": "planning"}
+{"text": "ACSM 和 NASM 的区别", "expect": "planning"}
+{"text": "考试大概在什么时候", "expect": "planning"}
+{"text": "帮我规划三个月的备考安排", "expect": "planning"}
+{"text": "证书的国际认可度怎么样", "expect": "planning"}
+{"text": "报考条件里对学历有要求吗", "expect": "planning"}
+{"text": "中文考试还是英文考试", "expect": "planning"}
+{"text": "我下周就要考试了，帮我安排一下最后的复习", "expect": "tutor"}
+{"text": "看看我的薄弱点然后出题练", "expect": "tutor"}
+{"text": "我模考没过怎么办", "expect": "tutor"}
+{"text": "根据我的情况帮我安排这周的学习", "expect": "tutor"}
+{"text": "分析一下我最近的学习状态", "expect": "tutor"}
+{"text": "我时间不多了，该怎么突击", "expect": "tutor"}
+{"text": "先诊断我的弱项，再给我出针对性的题", "expect": "tutor"}
+{"text": "我正确率一直上不去，帮我看看问题在哪", "expect": "tutor"}
+{"text": "给我制定一个针对薄弱章节的冲刺方案", "expect": "tutor"}
+{"text": "看看我错题本里哪章最多，讲讲那章的重点", "expect": "tutor"}
+{"text": "我练了两周了，效果怎么样", "expect": "tutor"}
+{"text": "帮我评估一下现在能不能去考试", "expect": "tutor"}
+{"text": "按我的模考成绩调整一下复习重点", "expect": "tutor"}
+{"text": "我这周该重点复习什么", "expect": "tutor"}
+{"text": "我要考 NSCA，给我一套从诊断到练习的完整方案", "expect": "tutor"}
+{"text": "讲解一下我上次错的那些题涉及的章节", "expect": "tutor"}
+{"text": "你好", "expect": "smalltalk"}
+{"text": "hi", "expect": "smalltalk"}
+{"text": "在吗", "expect": "smalltalk"}
+{"text": "你能干什么", "expect": "smalltalk"}
+{"text": "谢谢", "expect": "smalltalk"}
+{"text": "今天天气真好", "expect": "smalltalk"}
+{"text": "哈哈", "expect": "smalltalk"}
+{"text": "晚安", "expect": "smalltalk"}
+{"text": "你是机器人吗", "expect": "smalltalk"}
+{"text": "无聊，聊两句", "expect": "smalltalk"}
+{"text": "早上好", "expect": "smalltalk"}
+{"text": "拜拜", "expect": "smalltalk"}
+{"text": "有什么好玩的功能吗", "expect": "smalltalk"}
+{"text": "你叫什么名字", "expect": "smalltalk"}
+{"text": "我想去刷题", "expect": "practice"}
+{"text": "开始答题吧", "expect": "practice"}
+{"text": "我要做模拟考试", "expect": "practice"}
+{"text": "看看我的错题", "expect": "practice"}
+{"text": "今天该复习错题了", "expect": "practice"}
+{"text": "我想练习一下", "expect": "practice"}
+{"text": "来一轮答题", "expect": "practice"}
+{"text": "打开错题本", "expect": "practice"}
+{"text": "刷一组题练练手", "expect": "practice"}
+{"text": "开始今日刷题打卡", "expect": "practice"}
+{"text": "我要做套真题练练", "expect": "practice"}
+{"text": "答题模式怎么进", "expect": "practice"}
+{"text": "来 20 题随机练习", "expect": "practice"}
+{"text": "考试可以带水吗", "expect": "qa"}
+{"text": "腰不好的人适合什么运动", "expect": "qa"}

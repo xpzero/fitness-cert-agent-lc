@@ -1,0 +1,25 @@
+# secrets
+.env
+
+# 语料原始文件（版权材料不入库）
+backend/knowledge/raw/*
+!backend/knowledge/raw/.gitkeep
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# eval 输出
+backend/eval/report/*
+!backend/eval/report/.gitkeep
+!backend/eval/report/人工抽检清单.md
+
+# os
+.DS_Store
+
+# 上传的原始文件（版权边界同 knowledge/raw）
+backend/uploads/*
+!backend/uploads/.gitkeep

@@ -1,0 +1,33 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: fitness
+      POSTGRES_PASSWORD: fitness
+      POSTGRES_DB: fitness
+    ports:
+      - "5433:5432"   # 本机 5432 已有 Postgres，映射到 5433
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitness"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  langfuse:
+    image: langfuse/langfuse:2
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://fitness:fitness@db:5432/langfuse
+      NEXTAUTH_SECRET: dev-secret-change-me
+      SALT: dev-salt-change-me
+      NEXTAUTH_URL: http://localhost:3000
+      TELEMETRY_ENABLED: "false"
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: 单元测试（判分/SM-2/RAG纯函数）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 安装依赖
+        run: pip install -e .
+      - name: 单元测试
+        run: python -m unittest discover -s tests -v
+
+  retrieval-gate:
+    name: 检索评测门槛（Recall@5 ≥ 0.75）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: fitness
+          POSTGRES_PASSWORD: fitness
+          POSTGRES_DB: fitness
+        ports:
+          - "5433:5432"
+        options: >-
+          --health-cmd "pg_isready -U fitness"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://fitness:fitness@localhost:5433/fitness
+      EMBED_DIM: "512"
+      EMBED_MODEL: "BAAI/bge-small-zh-v1.5"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 安装依赖
+        run: pip install -e .
+      - name: 语料入库（本地 embedding，无需 LLM key）
+        run: python scripts/ingest.py
+      - name: 检索评测（--no-hyde：CI 无 LLM key；阈值不达标则失败）
+        run: python eval/scripts/run_retrieval_eval.py --no-hyde
+      - name: 上传评测报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrieval-report
+          path: backend/eval/report/latest-retrieval.md
