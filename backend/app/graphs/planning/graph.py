@@ -75,10 +75,10 @@ def collect_profile(state: PlanningState) -> dict:
     missing = [k for k in REQUIRED_PROFILE if not profile.get(k)]
     if missing:
         return {"plan_status": "draft",
-                "final": f"缺少信息：{missing}（identity/city/weekly_hours/exam_date）"}
+                "message": f"缺少信息：{missing}（identity/city/weekly_hours/exam_date）"}
     weeks = max(1, round((date.fromisoformat(str(profile["exam_date"])) - date.today()).days / 7))
     return {"profile": {**profile, "weeks": weeks},
-            "final": f"距离考试约 {weeks} 周", "plan_status": "draft"}
+            "message": f"距离考试约 {weeks} 周", "plan_status": "draft"}
 
 
 def compare_certs(state: PlanningState) -> dict:
@@ -162,10 +162,10 @@ def hitl_confirm(state: PlanningState) -> dict:
                           "cert_comparison": state["cert_comparison"]})
     if decision.get("approve"):
         return {"plan_status": "active", "human_feedback": "",
-                "final": "计划已确认生效（可在刷题页按计划练习）"}
+                "message": "计划已确认生效（可在刷题页按计划练习）"}
     return {"plan_status": "draft",
             "human_feedback": decision.get("feedback", "请调整"),
-            "final": "已收到修改意见，重新生成计划…"}
+            "message": "已收到修改意见，重新生成计划…"}
 
 
 def apply_plan_adjustment(user_id: str, weak_chapters: list[str],
@@ -234,7 +234,7 @@ def save_plan(state: PlanningState) -> dict:
                "u": state["user_id"], "c": state["plan"].get("primary", "nsca_cpt"),
                "e": str(state["profile"].get("exam_date")),
                "p": json.dumps(state["plan"], ensure_ascii=False)})
-    return {"final": "计划已保存（active）"}
+    return {"message": "计划已保存（active）"}
 
 
 def adjust_plan(state: PlanningState) -> dict:

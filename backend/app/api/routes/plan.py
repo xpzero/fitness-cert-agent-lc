@@ -25,7 +25,7 @@ def plan_start(req: PlanStartRequest) -> dict:
     state = graph.invoke({"user_id": req.user_id, "profile": req.profile,
                           "plan_status": "draft"}, config)
     return {"thread_id": thread_id, "pending_confirm": bool(state.get("__interrupt__")),
-            "message": state.get("final", ""),
+            "message": state.get("message", ""),
             "plan": state.get("plan", {}), "path": state.get("recommended_path", {}),
             "cert_compare": state.get("cert_comparison", [])}
 
@@ -40,7 +40,7 @@ def plan_confirm(req: PlanConfirmRequest) -> dict:
     return {"thread_id": req.thread_id,
             "pending_confirm": bool(state.get("__interrupt__")),
             "plan_status": state.get("plan_status", ""),
-            "message": state.get("final", ""), "plan": state.get("plan", {})}
+            "message": state.get("message", ""), "plan": state.get("plan", {})}
 
 
 @router.get("/plan/overview")
