@@ -77,7 +77,6 @@ backend/          # Python 后端（uv 工程：pyproject + .venv）
   scripts/        # ingest(种子语料)、batch_generate(批量出题)、ocr_pdf
   tests/          # 单元测试（判分/SM-2/RAG 纯函数）
 frontend/         # React+shadcn 前端（lib/types.ts 共享类型 + constants.ts；dev/preview 代理 API）
-docs/             # 工程踩坑笔记 + 架构流程图（RAG 摄取/查询）
 Makefile          # 根编排（infra/api/serve/web-*/test/eval-*）
 docker-compose.yml # PostgreSQL(pgvector) + Langfuse
 ```
@@ -96,7 +95,6 @@ docker-compose.yml # PostgreSQL(pgvector) + Langfuse
 
 **本机端口约定（8000/5432 被系统占用）：** 前端=5173（dev 与 preview，API 经 vite 代理到 8770），API=8770（独立进程，不托管前端），DB=5433，Langfuse=3000
 **Langfuse：** 密钥在 .env；测试 trace `smoke-p0-001` 可在面板中查到
-工程踩坑笔记见 [docs/engineering-notes.md](docs/engineering-notes.md)。
 
 ## 改进待办
 
