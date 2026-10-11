@@ -16,19 +16,17 @@ load_dotenv(PROJECT_ROOT / ".env")
 @dataclass
 class Settings:
     # LLM
-    # key 通用命名（gen 侧换厂商时不必再读智谱名的变量）；LLM_API_KEY 缺省回退
-    llm_api_key: str = field(default_factory=lambda: os.environ.get("LLM_API_KEY")
-                             or os.environ.get("ZHIPU_API_KEY", ""))
+    llm_api_key: str = field(default_factory=lambda: os.environ.get("LLM_API_KEY", ""))
     gen_api_key: str = field(default_factory=lambda: os.environ.get("GEN_API_KEY", ""))
-    # fast 通道 base_url 按角色命名（FAST_BASE_URL），缺省回退 ZHIPU_BASE_URL
+    # fast 通道 base_url（FAST_BASE_URL），缺省沿用 GEN_BASE_URL
     fast_base_url: str = field(
         default_factory=lambda: os.environ.get(
             "FAST_BASE_URL",
-            os.environ.get("ZHIPU_BASE_URL", "https://open.bigmodel.cn/api/paas/v4"))
+            os.environ.get("GEN_BASE_URL", "https://open.bigmodel.cn/api/paas/v4"))
     )
     gen_model: str = field(default_factory=lambda: os.environ.get("GEN_MODEL", "glm-4.6"))
     gen_base_url: str = field(
-        default_factory=lambda: os.environ.get("GEN_BASE_URL", os.environ.get("ZHIPU_BASE_URL", "https://open.bigmodel.cn/api/paas/v4"))
+        default_factory=lambda: os.environ.get("GEN_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
     )
     fast_model: str = field(default_factory=lambda: os.environ.get("FAST_MODEL", "glm-4-flash"))
     # init_chat_model 的 provider 字符串（OpenAI 兼容协议厂商都用 "openai"+base_url；

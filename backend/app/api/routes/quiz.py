@@ -110,7 +110,6 @@ async def _diagnosis_events(graph, user_id: str, cert_id: str):
     yield {"event": "report", "report": report}
 
 
-
 # ---------------------------------------------------------------- 讲题教练
 
 @router.post("/quiz/coach/start")

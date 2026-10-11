@@ -1,8 +1,8 @@
 """LLM 客户端（LangChain：init_chat_model 工厂 + OpenAI 兼容协议集成）。
 
-模型分工（设计文档 P5 模式，LLMClient 的两个档位）：
+模型分工（LLMClient 的两个档位）：
 - chat_gen  → 生成模型（问答/出题/讲解），GEN_MODEL + GEN_BASE_URL + GEN_API_KEY
-- chat_fast → 轻模型（路由/自检/评分），FAST_MODEL + ZHIPU_BASE_URL + LLM_API_KEY
+- chat_fast → 轻模型（路由/自检/评分），FAST_MODEL + FAST_BASE_URL + LLM_API_KEY
 重试由集成层 max_retries 承担；配额类 429/1113 翻译为明确错误快速失败。
 provider 由 settings.llm_provider 驱动（OpenAI 兼容协议厂商都用 "openai" +
 base_url）；gen 侧换厂商只改 .env（GEN_MODEL/GEN_BASE_URL/GEN_API_KEY，
