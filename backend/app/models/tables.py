@@ -9,13 +9,13 @@ chunks.embedding 使用 pgvector 的 Vector（维度由 EMBED_DIM 驱动）。
     题库域   questions（verified = 闸门结论）
     行为域   user_answers → wrong_book(SM-2) · mock_reports · favorites
              study_plans(draft→active) · study_checkins
-    会话域   diagnosis_reports（调查轨迹存档）· coach_sessions（phase 状态机）
+    会话域   diagnosis_reports（调查轨迹存档）
 
 主数据流「一道题的一生」：
     quizgen 四闸全过 → INSERT questions（verified=true）
     → /quiz/start SELECT（只取 verified）→ /quiz/submit INSERT user_answers
     → 答错 INSERT/UPDATE wrong_book（SM-2 排期）→ 模考 INSERT mock_reports
-    → 教练 INSERT coach_sessions → 变式题又一行 questions（结果回写原题 SM-2）
+    → 教练进程内会话 → 变式题又一行 questions（结果回写原题 SM-2）
 """
 from __future__ import annotations
 
@@ -235,20 +235,6 @@ class DiagnosisReport(Base):
     suggestions: Mapped[list] = mapped_column(JSONB, default=list)
     steps: Mapped[list] = mapped_column(JSONB, default=list)   # agent 调查轨迹（工具+理由）
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-
-class CoachSession(Base):
-    """苏格拉底讲题教练会话（W4）：状态机 active → done。"""
-    __tablename__ = "coach_sessions"
-    id: Mapped[str] = mapped_column(String(40), primary_key=True)
-    user_id: Mapped[str] = mapped_column(String(64))
-    question_id: Mapped[str] = mapped_column(String(40))
-    messages: Mapped[list] = mapped_column(JSONB, default=list)  # [{role, content}]
-    status: Mapped[str] = mapped_column(String(16), default="active")  # active|done
-    phase: Mapped[str] = mapped_column(String(16), default="probe")    # probe|hint|explain|verify|done
-    variant_question_id: Mapped[str | None] = mapped_column(String(40), nullable=True)  # 变式题出现前为空
-    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class ChatMessage(Base):

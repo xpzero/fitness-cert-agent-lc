@@ -1,9 +1,13 @@
 """苏格拉底讲题教练（W4）：消息驱动的会话状态机。
 
 为什么不做成 LangGraph 图：与 practice 同理（两段式表单交互不适合单次图执行）
-——每条用户消息一次 LLM 调用，会话状态存 coach_sessions 表（messages/phase），
-跨请求续话。状态机 probe → hint → explain → verify → done 由 LLM 输出的
-next_phase 驱动，硬约束（超轮必讲透、verify 才出变式题）由代码把关。
+——每条用户消息一次 LLM 调用，会话状态存进程内字典（messages/phase），
+跨请求续话（一次性会话，进程重启即失效）。状态机 probe → hint → explain
+→ verify → done 由 LLM 决策的 next_phase 驱动，硬约束（超轮必讲透、
+verify 才出变式题）由代码把关。
+
+LLM 决策走 LangChain 原生结构化输出：init_chat_model + with_structured_output
+（单步决策无工具环，schema 即决策协议，无需剥 JSON 围栏）。
 
 闭环咬合点：变式题结果写回**原题**的 SM-2 排程（对话结果驱动复习排程）；
 变式题本身走 quizgen 全套闸门（seed_points 定向出题 + 查重天然防与原题重复）。
@@ -11,18 +15,46 @@ next_phase 驱动，硬约束（超轮必讲透、verify 才出变式题）由�
 from __future__ import annotations
 
 import json
+import typing
 import uuid
 from datetime import date
+from functools import lru_cache
+from typing import Literal
 
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import BaseModel, Field
 from sqlalchemy import text as sql_text
 
 from app.config import settings
 from app.db import get_engine
-from app.llm import llm_client
 from app.prompts.practice import COACH_SYSTEM
 from app.services.repositories import repo
 from app.tools.grader import grade, resolve_answer_key
 from app.tools.sm2 import Sm2Record, new_record, review
+
+
+class CoachDecision(BaseModel):
+    """教练单步决策 schema（原生结构化输出）。"""
+
+    reply: str = Field(description="对考生说的话，≤120 字，一次只推进一小步")
+    next_phase: Literal["probe", "hint", "explain", "verify", "done"] = Field(
+        description="本轮对话推进到的教学阶段")
+    ready_for_variant: bool = Field(
+        description="考生是否已讲透、可以出变式题检验")
+
+
+@lru_cache(maxsize=1)
+def _decision_llm():
+    """教练决策模型：gen 档 + 结构化输出绑定（懒加载，import 不触发网络）。"""
+    base = init_chat_model(
+        f"openai:{settings.gen_model}",
+        base_url=settings.gen_base_url,
+        api_key=settings.gen_api_key or settings.llm_api_key,
+        timeout=120, max_retries=settings.llm_max_retries,
+        temperature=0.4, max_tokens=600,
+    )
+    return base.with_structured_output(CoachDecision)
 
 
 def _load_question(question_id: str) -> dict | None:
@@ -64,25 +96,27 @@ def _context_block(question: dict, user_answer: str) -> str:
 
 def _coach_reply(context: str, messages: list[dict],
                  force_explain: bool = False) -> dict:
-    """一次教练调用：返回 {reply, next_phase, ready_for_variant}。"""
+    """一次教练调用（原生结构化输出）：返回 {reply, next_phase, ready_for_variant}。"""
     extra = ("\n（已达最大对话轮数，本轮必须完整讲透并进入 verify。）"
              if force_explain else "")
     conversation = "\n".join(
         f"{'考生' if m['role'] == 'user' else '教练'}：{m['content']}"
         for m in messages[-8:])  # 上下文预算：最近 8 轮
     try:
-        out = llm_client.chat_json(
-            [{"role": "system", "content": COACH_SYSTEM + extra},
-             {"role": "user",
-              "content": f"{context}\n\n对话记录：\n{conversation}\n\n"
-                         "输出教练的下一句话（JSON）。"}],
-            model_tier="gen", temperature=0.4, max_tokens=600)
+        out = typing.cast(
+            CoachDecision,
+            _decision_llm().invoke([
+                SystemMessage(content=COACH_SYSTEM + extra),
+                HumanMessage(content=f"{context}\n\n对话记录：\n{conversation}\n\n"
+                                     "输出教练的下一句话。")]))
+        if out is None:  # 模型未按 schema 返回（个别兼容端点）→ 走兜底话术
+            raise ValueError("structured output returned None")
     except Exception as e:  # noqa: BLE001 — LLM 故障给兜底话术，会话不崩
         return {"reply": f"（教练服务暂时不可用：{str(e)[:60]}，稍后重发）",
                 "next_phase": "probe", "ready_for_variant": False}
-    return {"reply": str(out.get("reply", "")).strip() or "我们继续。",
-            "next_phase": str(out.get("next_phase", "probe")),
-            "ready_for_variant": bool(out.get("ready_for_variant"))}
+    return {"reply": (out.reply or "").strip() or "我们继续。",
+            "next_phase": out.next_phase,
+            "ready_for_variant": bool(out.ready_for_variant)}
 
 
 def _generate_variant(question: dict) -> dict | None:
@@ -103,61 +137,48 @@ def _generate_variant(question: dict) -> dict | None:
             "explanation": d.explanation}
 
 
+# ------------------------------------------------- 一次性会话（进程内存储）
+_sessions: dict[str, dict] = {}  # session_id → 会话行（messages/phase/status）
+
+
 def _get_session(session_id: str) -> dict | None:
-    with get_engine().connect() as conn:
-        row = conn.execute(sql_text(
-            "SELECT id, user_id, question_id, messages::text AS msgs, "
-            "status, phase, variant_question_id FROM coach_sessions "
-            "WHERE id = :s"), {"s": session_id}).mappings().first()
-    if not row:
-        return None
-    return dict(row, messages=json.loads(row["msgs"] or "[]"))
+    return _sessions.get(session_id)
 
 
 def _update_session(session_id: str, *, messages: list[dict], phase: str,
                     status: str = "active", variant_id: str | None = None) -> None:
-    # ended_at 按状态拼接而非 CASE WHEN :st='done'——同一绑定参数出现在两种
-    # 类型语境会触发 psycopg 的 AmbiguousParameter
-    sql = """
-        UPDATE coach_sessions
-        SET messages = CAST(:m AS jsonb), phase = :p, status = :st,
-            variant_question_id = COALESCE(:v, variant_question_id)
-    """
-    if status == "done":
-        sql += ", ended_at = now()"
-    sql += " WHERE id = :s"
-    with get_engine().begin() as conn:
-        conn.execute(sql_text(sql),
-                     {"m": json.dumps(messages, ensure_ascii=False), "p": phase,
-                      "st": status, "v": variant_id, "s": session_id})
+    session = _sessions.get(session_id)
+    if not session:
+        return
+    session.update(messages=messages, phase=phase, status=status,
+                   variant_question_id=variant_id or session.get(
+                       "variant_question_id"))
 
 
 # ---------------------------------------------------------------- 对外入口
 
 def get_active_session(user_id: str, question_id: str) -> dict | None:
     """该题最近一次 active 会话（前端刷新恢复用）；无进行中会话返回 None。"""
-    with get_engine().connect() as conn:
-        row = conn.execute(sql_text(
-            "SELECT id, messages::text AS msgs, phase, variant_question_id "
-            "FROM coach_sessions "
-            "WHERE user_id = :u AND question_id = :q AND status = 'active' "
-            "ORDER BY started_at DESC LIMIT 1"),
-            {"u": user_id, "q": question_id}).first()
-    if not row:
-        return None
-    out = {"session_id": row[0], "messages": json.loads(row[1] or "[]"),
-           "phase": row[2]}
-    if row[3]:  # 有未作答的变式题 → 一并恢复（题面从 questions 表取）
-        question = _load_question(row[3])
-        if question:
-            out["variant"] = {"id": question["id"], "type": question["type"],
-                              "stem": question["stem"],
-                              "options": question["options"]}
-    return out
+    for session in reversed(list(_sessions.values())):  # 后建的是最新会话
+        if (session["user_id"] != user_id
+                or session["question_id"] != question_id
+                or session["status"] != "active"):
+            continue
+        out = {"session_id": session["id"], "messages": session["messages"],
+               "phase": session["phase"]}
+        vqid = session.get("variant_question_id")
+        if vqid:  # 有未作答的变式题 → 一并恢复（题面从 questions 表取）
+            question = _load_question(vqid)
+            if question:
+                out["variant"] = {"id": question["id"], "type": question["type"],
+                                  "stem": question["stem"],
+                                  "options": question["options"]}
+        return out
+    return None
 
 
 def start_session(user_id: str, question_id: str) -> dict:
-    """开场：载题 → 教练第一句（probe 反问）→ 建 coach_sessions 行。"""
+    """开场：载题 → 教练第一句（probe 反问）→ 建进程内会话。"""
     question = _load_question(question_id)
     if not question:
         return {"error": f"题目不存在：{question_id}"}
@@ -166,14 +187,11 @@ def start_session(user_id: str, question_id: str) -> dict:
     opening = _coach_reply(context, [{"role": "user", "content": "我刚做错了这题"}])
     session_id = "coach-" + uuid.uuid4().hex[:10]
     messages = [{"role": "coach", "content": opening["reply"]}]
-    with get_engine().begin() as conn:
-        conn.execute(sql_text("""
-            INSERT INTO coach_sessions (id, user_id, question_id, messages,
-                                        status, phase)
-            VALUES (:id, :u, :q, CAST(:m AS jsonb), 'active', :p)
-        """), {"id": session_id, "u": user_id, "q": question_id,
-               "m": json.dumps(messages, ensure_ascii=False),
-               "p": opening["next_phase"]})
+    _sessions[session_id] = {
+        "id": session_id, "user_id": user_id, "question_id": question_id,
+        "messages": messages, "status": "active",
+        "phase": opening["next_phase"], "variant_question_id": None,
+    }
     return {"session_id": session_id, "greeting": opening["reply"],
             "phase": opening["next_phase"]}
 
