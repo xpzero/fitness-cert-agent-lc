@@ -24,7 +24,7 @@ class TutorState(TypedDict, total=False):
     messages: list          # create_agent 状态（对话消息）
     user_id: str
     steps: list             # 调查轨迹（steps_trace 消费）
-    final_report: dict | None
+    reply: dict | None
 
 
 def synthesize(state: dict) -> dict:  # type: ignore[type-arg]
@@ -43,7 +43,7 @@ def synthesize(state: dict) -> dict:  # type: ignore[type-arg]
         reply = str(out.get("reply", "")).strip()
     except Exception:  # noqa: BLE001
         reply = "（导师服务暂时不可用，请稍后再试）"
-    return {"steps": steps, "final_report": {
+    return {"steps": steps, "reply": {
         "reply": reply or "（无回复）",
         "steps_trace": [{"tool": s["tool"]} for s in steps]}}
 
@@ -80,5 +80,5 @@ def run_tutor(user_id: str, message: str, history: list[dict] | None = None) -> 
     state = graph.invoke({"messages": [{
         "role": "user",
         "content": f"用户请求：{message}{hist_block}"}],
-        "user_id": user_id, "steps": [], "final_report": None})
-    return state.get("final_report") or {"reply": "（导师未能完成请求）"}
+        "user_id": user_id, "steps": []})
+    return state.get("reply") or {"reply": "（导师未能完成请求）"}

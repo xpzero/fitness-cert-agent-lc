@@ -54,9 +54,9 @@ class TestDiagnosisSynthesize(unittest.TestCase):
                 "user_id": "u1",
                 "messages": [_tool_msg("chapter_accuracy", "第3章：12/30")]})
         self.assertFalse(out["degraded"])
-        self.assertEqual(out["final_report"]["findings"][0]["evidence"]["source_tool"],
+        self.assertEqual(out["report"]["findings"][0]["evidence"]["source_tool"],
                          "chapter_accuracy")
-        self.assertEqual(out["final_report"]["steps_trace"][0]["tool"],
+        self.assertEqual(out["report"]["steps_trace"][0]["tool"],
                          "chapter_accuracy")
 
     def test_empty_steps_degrades_to_rule_report(self):
@@ -66,7 +66,7 @@ class TestDiagnosisSynthesize(unittest.TestCase):
             out = diag.synthesize({"user_id": "u1", "messages": []})
         self.assertTrue(out["degraded"])
         rb.assert_called_once_with("u1")
-        self.assertEqual(len(out["final_report"]["findings"]), 2)
+        self.assertEqual(len(out["report"]["findings"]), 2)
 
     def test_synthesize_llm_failure_degrades(self):
         with mock.patch.object(llm_client, "chat_json",

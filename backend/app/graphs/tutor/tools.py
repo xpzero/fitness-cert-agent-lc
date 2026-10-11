@@ -82,8 +82,8 @@ def build_tutor_tools(user_id: str) -> list:
             "messages": [{"role": "user",
                           "content": f"诊断用户 {user_id} 的学情"}],
             "user_id": user_id, "cert_id": "",
-            "steps": [], "final_report": None})
-        report = state.get("final_report") or {}
+            "steps": []})
+        report = state.get("report") or {}
         findings = "；".join(
             f"{f.get('chapter', '?')}：{f.get('symptom', '')}"
             for f in report.get("findings", [])[:4])

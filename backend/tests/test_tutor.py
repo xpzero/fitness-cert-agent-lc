@@ -34,7 +34,7 @@ class TestTutorTools(unittest.TestCase):
         class _FakeGraph:
             def invoke(self, state, config=None):
                 captured.update(state)
-                return {"final_report": {"findings": [
+                return {"report": {"findings": [
                     {"chapter": "第3章", "symptom": "正确率 40%"}],
                     "suggestions": ["补练"]}}
 
@@ -60,8 +60,8 @@ class TestTutorSynthesize(unittest.TestCase):
         with mock.patch.object(llm_client, "chat_json",
                                return_value={"reply": "建议先补第3章"}):
             out = tutor.synthesize({"messages": msgs})
-        self.assertEqual(out["final_report"]["reply"], "建议先补第3章")
-        self.assertEqual(out["final_report"]["steps_trace"],
+        self.assertEqual(out["reply"]["reply"], "建议先补第3章")
+        self.assertEqual(out["reply"]["steps_trace"],
                          [{"tool": "diagnose"}])
         self.assertEqual(out["steps"][0]["thought"], "先查学情")
 
@@ -69,15 +69,15 @@ class TestTutorSynthesize(unittest.TestCase):
         with mock.patch.object(llm_client, "chat_json",
                                side_effect=ValueError("no json")):
             out = tutor.synthesize({"messages": []})
-        self.assertIn("暂时不可用", out["final_report"]["reply"])
-        self.assertEqual(out["final_report"]["steps_trace"], [])
+        self.assertIn("暂时不可用", out["reply"]["reply"])
+        self.assertEqual(out["reply"]["steps_trace"], [])
 
     def test_no_tools_still_synthesizes(self):
         # 环内无工具调用：transcript 兜底文案，回复仍可产出
         with mock.patch.object(llm_client, "chat_json",
                                return_value={"reply": "直接回答"}):
             out = tutor.synthesize({"messages": []})
-        self.assertEqual(out["final_report"]["reply"], "直接回答")
+        self.assertEqual(out["reply"]["reply"], "直接回答")
 
 
 class TestTutorGraphTopology(unittest.TestCase):
@@ -143,7 +143,7 @@ class TestTutorEndToEndFakeModel(unittest.TestCase):
             events = []
             async for ns, mode, payload in graph.astream(
                     {"messages": [HumanMessage(content="考我")],
-                     "user_id": "u1", "steps": [], "final_report": None},
+                     "user_id": "u1", "steps": [], "report": None},
                     stream_mode=["updates"], subgraphs=True):
                 if ns and isinstance(payload, dict) and "tools" in payload:
                     events.append(payload["tools"]["messages"])

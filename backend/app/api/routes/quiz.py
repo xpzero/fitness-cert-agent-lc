@@ -83,17 +83,17 @@ async def _diagnosis_events(graph, user_id: str, cert_id: str):
         {"messages": [{"role": "user",
                        "content": f"诊断用户 {user_id} 的学情并给出补弱建议"}],
          "user_id": user_id, "cert_id": cert_id,
-         "steps": [], "final_report": None},
+         "steps": []},
         stream_mode=["updates"], subgraphs=True,
     ):
         if not isinstance(payload, dict):
             continue
         if not ns:
-            # 顶层节点 update：收集收尾状态（steps/final_report/degraded）
+            # 顶层节点 update：收集收尾状态（steps/report/degraded）
             for update in payload.values():
                 if isinstance(update, dict):
                     final_state.update({k: v for k, v in update.items()
-                                        if k in ("steps", "final_report",
+                                        if k in ("steps", "report",
                                                  "degraded")})
             continue
         # agent 子图内：累积消息，tools 节点出结果即转 step 增量发出

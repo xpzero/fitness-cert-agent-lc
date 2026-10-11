@@ -66,7 +66,7 @@ class TestDiagnosisSSEEvents(unittest.TestCase):
         self.assertEqual(fr.call_count, 1)
 
     def test_report_event_uses_final_state(self):
-        # synthesize 产出的 final_report 进入 finalize（plan_adjust 应用等）
+        # synthesize 产出的 report 进入 finalize（plan_adjust 应用等）
         import app.graphs.diagnosis.graph as dg
 
         with mock.patch.object(dg, "finalize_report",

@@ -30,7 +30,7 @@ class DiagnosisState(TypedDict, total=False):
     user_id: str
     cert_id: str
     steps: list             # 调查轨迹（SSE/评测消费）
-    final_report: dict | None
+    report: dict | None
     degraded: bool          # True = 规则版兜底（agent 链路不可用）
 
 
@@ -55,7 +55,7 @@ def synthesize(state: dict) -> dict:  # type: ignore[type-arg]
     """收尾：把调查轨迹合成结构化报告（findings 必带数据出处）。"""
     steps = messages_to_steps(state.get("messages") or [])
     if not steps:
-        return {"steps": steps, "final_report": _rule_based_report(
+        return {"steps": steps, "report": _rule_based_report(
                     state.get("user_id", "")), "degraded": True}
     transcript = "\n".join(
         f"- [{s['tool']}] {s['output']}" for s in steps)
@@ -65,13 +65,13 @@ def synthesize(state: dict) -> dict:  # type: ignore[type-arg]
               "content": SYNTHESIZE_PROMPT.format(transcript=transcript)}],
             model_tier="gen", max_tokens=1200)
     except Exception:  # noqa: BLE001 — 合成失败 → 规则版兜底
-        return {"steps": steps, "final_report": _rule_based_report(
+        return {"steps": steps, "report": _rule_based_report(
                     state.get("user_id", "")), "degraded": True}
     report.setdefault("findings", [])
     report.setdefault("suggestions", [])
     report["steps_trace"] = [
         {"tool": s["tool"], "thought": s["thought"]} for s in steps]
-    return {"steps": steps, "final_report": report, "degraded": False}
+    return {"steps": steps, "report": report, "degraded": False}
 
 
 def build_diagnosis_graph(user_id: str, cert_id: str = ""):
@@ -96,7 +96,7 @@ def build_diagnosis_graph(user_id: str, cert_id: str = ""):
 
 def finalize_report(state: dict, user_id: str, cert_id: str = "") -> dict:
     """环结束后收尾（同步入口与 SSE 路由共用）：应用计划调整 + 落库。"""
-    report = state.get("final_report") or {}
+    report = state.get("report") or {}
     report["degraded"] = bool(state.get("degraded"))
 
     adjustment = report.get("plan_adjustment") or {}
@@ -134,5 +134,5 @@ def run_diagnosis(user_id: str, cert_id: str = "") -> dict:
         "role": "user",
         "content": f"诊断用户 {user_id} 的学情并给出补弱建议"}],
         "user_id": user_id, "cert_id": cert_id,
-        "steps": [], "final_report": None})
+        "steps": [], "report": None})
     return finalize_report(state, user_id, cert_id)
