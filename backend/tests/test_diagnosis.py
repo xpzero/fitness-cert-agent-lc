@@ -1,88 +1,47 @@
-"""学情诊断 agent 单测（W3）：工具环行为 + 降级链，mock LLM 与工具。
-
-覆盖 common.build_agent_loop 的环语义（步数上限、未知工具防死循环、
-决策失败收尾）与 diagnosis 的收尾合成/规则版兜底。
-"""
+"""学情诊断 agent 单测（原生 tool-calling 版）：装配结构 + 收尾合成 + 降级链。"""
 from __future__ import annotations
 
 import unittest
 from unittest import mock
 
-from app.graphs.common import AgentLoopState, build_agent_loop
 from app.graphs.diagnosis import graph as diag
+from app.graphs.native import messages_to_steps
 from app.llm import llm_client
 
 
-class _LoopState(AgentLoopState, total=False):
-    final_report: dict | None
+def _tool_msg(name: str, content: str):
+    from langchain_core.messages import ToolMessage
+    return ToolMessage(content=content, name=name, tool_call_id=f"call_{name}")
 
 
-def _loop(resp_sequence, tools=None, finish=None, max_steps=4):
-    finish = finish or (lambda s: {"final_report": {"steps": len(s.get("steps") or [])}})
-    tools = tools or {"echo": lambda inp: f"echo:{inp}"}
-    g = build_agent_loop(_LoopState, system_prompt="sys", tools=tools,
-                         finish_fn=finish, max_steps=max_steps)
-    patcher = mock.patch.object(llm_client, "chat_json",
-                                side_effect=list(resp_sequence))
-    return g, patcher, finish
+class TestMessagesToSteps(unittest.TestCase):
+    def test_tool_trajectory_extraction(self):
+        from langchain_core.messages import AIMessage, HumanMessage
+        msgs = [
+            HumanMessage(content="诊断学情"),
+            AIMessage(content="先看各章正确率"),
+            AIMessage(content="", tool_calls=[
+                {"name": "chapter_accuracy", "args": {}, "id": "call_1"}]),
+            _tool_msg("chapter_accuracy", "第3章：12/30（正确率 40%）"),
+            AIMessage(content="", tool_calls=[
+                {"name": "wrongbook_backlog", "args": {}, "id": "call_2"}]),
+            _tool_msg("wrongbook_backlog", "错题本共 10 题，今日到期 4 题"),
+        ]
+        steps = messages_to_steps(msgs)
+        self.assertEqual(len(steps), 2)
+        self.assertEqual(steps[0]["tool"], "chapter_accuracy")
+        self.assertEqual(steps[0]["thought"], "先看各章正确率")
+        self.assertIn("40%", steps[0]["output"])
+
+    def test_no_tools_gives_empty_steps(self):
+        from langchain_core.messages import AIMessage, HumanMessage
+        steps = messages_to_steps([HumanMessage(content="hi"),
+                                   AIMessage(content="直接回答")])
+        self.assertEqual(steps, [])
 
 
-class TestAgentLoop(unittest.TestCase):
-    def _invoke(self, g):
-        return g.invoke({"task": "t", "steps": [], "final_report": None})
-
-    def test_two_tool_calls_then_finish(self):
-        g, patcher, _ = _loop([
-            {"thought": "a", "action": "echo", "action_input": "1"},
-            {"thought": "b", "action": "echo", "action_input": "2"},
-            {"thought": "done", "action": "finish"},
-        ])
-        with patcher:
-            state = self._invoke(g)
-        self.assertEqual(len(state["steps"]), 2)
-        self.assertEqual(state["steps"][0]["output"], "echo:1")
-        self.assertIsNotNone(state["final_report"])
-
-    def test_unknown_tool_finishes_not_loops(self):
-        # 未知工具名 → 直接收尾（不把错误喂回 agent 重试，防死循环）
-        g, patcher, _ = _loop([{"thought": "?", "action": "nope",
-                                "action_input": {}}])
-        with patcher:
-            state = self._invoke(g)
-        self.assertEqual(state.get("steps"), [])
-        self.assertIsNotNone(state["final_report"])
-
-    def test_max_steps_truncates(self):
-        g, patcher, _ = _loop([{"action": "echo", "action_input": i}
-                               for i in range(10)], max_steps=3)
-        with patcher:
-            state = self._invoke(g)
-        self.assertEqual(len(state["steps"]), 3)
-        self.assertIsNotNone(state["final_report"])
-
-    def test_llm_failure_finishes_with_empty_steps(self):
-        g, patcher, _ = _loop([ValueError("boom")])
-        with patcher:
-            state = self._invoke(g)
-        self.assertEqual(state.get("steps"), [])
-        self.assertIsNotNone(state["final_report"])
-
-    def test_tool_exception_recorded_and_continues(self):
-        def boom(_inp):
-            raise RuntimeError("sql down")
-
-        g, patcher, _ = _loop([
-            {"action": "boom_tool", "action_input": {}},
-            {"action": "finish"},
-        ], tools={"boom_tool": boom})
-        with patcher:
-            state = self._invoke(g)
-        self.assertIn("工具执行失败", state["steps"][0]["output"])
-
-
-class TestDiagnosisFinish(unittest.TestCase):
+class TestDiagnosisSynthesize(unittest.TestCase):
     def test_synthesize_requires_evidence_fields(self):
-        # 合成输出的 findings 结构（评测端按 source_tool 重放核对）
         with mock.patch.object(
                 llm_client, "chat_json",
                 return_value={"findings": [{"chapter": "第3章",
@@ -90,36 +49,43 @@ class TestDiagnosisFinish(unittest.TestCase):
                                             "evidence": {"metric": "正确率",
                                                          "value": "12/30",
                                                          "source_tool": "chapter_accuracy"}}],
-                              "suggestions": ["补练"]}), \
-             mock.patch("app.graphs.diagnosis.graph.build_diagnosis_tools"):
-            finish = diag._make_finish_fn("u1")
-            out = finish({"steps": [{"tool": "chapter_accuracy",
-                                     "input": None, "thought": "",
-                                     "output": "第3章：12/30"}]})
+                              "suggestions": ["补练"]}):
+            out = diag.synthesize({
+                "user_id": "u1",
+                "messages": [_tool_msg("chapter_accuracy", "第3章：12/30")]})
         self.assertFalse(out["degraded"])
         self.assertEqual(out["final_report"]["findings"][0]["evidence"]["source_tool"],
                          "chapter_accuracy")
+        self.assertEqual(out["final_report"]["steps_trace"][0]["tool"],
+                         "chapter_accuracy")
 
     def test_empty_steps_degrades_to_rule_report(self):
-        with mock.patch.object(
-                diag, "build_diagnosis_tools") as bt:
-            bt.return_value = {
-                "chapter_accuracy": lambda _i: "无答题记录",
-                "wrongbook_backlog": lambda _i: "错题本为空"}
-            out = diag._make_finish_fn("u1")({"steps": []})
+        with mock.patch.object(diag, "_rule_based_report") as rb:
+            rb.return_value = {"findings": [{"x": 1}, {"x": 2}],
+                               "degraded": True}
+            out = diag.synthesize({"user_id": "u1", "messages": []})
         self.assertTrue(out["degraded"])
+        rb.assert_called_once_with("u1")
         self.assertEqual(len(out["final_report"]["findings"]), 2)
 
     def test_synthesize_llm_failure_degrades(self):
         with mock.patch.object(llm_client, "chat_json",
                                side_effect=ValueError("no json")), \
-             mock.patch.object(diag, "build_diagnosis_tools") as bt:
-            bt.return_value = {"chapter_accuracy": lambda _i: "x",
-                               "wrongbook_backlog": lambda _i: "y"}
-            out = diag._make_finish_fn("u1")(
-                {"steps": [{"tool": "chapter_accuracy", "input": None,
-                            "thought": "", "output": "o"}]})
+             mock.patch.object(diag, "_rule_based_report") as rb:
+            rb.return_value = {"findings": [], "degraded": True}
+            out = diag.synthesize({
+                "user_id": "u1",
+                "messages": [_tool_msg("chapter_accuracy", "第3章：12/30")]})
         self.assertTrue(out["degraded"])
+        rb.assert_called_once_with("u1")
+
+
+class TestGraphTopology(unittest.TestCase):
+    def test_graph_builds_with_native_agent(self):
+        g = diag.build_diagnosis_graph("u1", "nsca_cpt")
+        nodes = set(g.get_graph().nodes)
+        self.assertIn("investigate", nodes)
+        self.assertIn("synthesize", nodes)
 
 
 if __name__ == "__main__":
