@@ -29,8 +29,6 @@ class TestTutorTools(unittest.TestCase):
 
     def test_user_id_closure_bound(self):
         """工具闭包绑定 user_id：diagnose 内部调用诊断图时用绑定值。"""
-        import json
-
         captured = {}
 
         class _FakeGraph:
@@ -45,8 +43,7 @@ class TestTutorTools(unittest.TestCase):
                                return_value=_FakeGraph()):
             tools = {t.name: t for t in tutor.build_tutor_tools("u42")}
             out = tools["diagnose"].invoke({})
-        self.assertIn("u42", json.dumps(captured, ensure_ascii=False)
-                      or "u42")  # messages 内含 user_id
+        self.assertEqual(captured["user_id"], "u42")  # 闭包绑定的用户
         self.assertIn("第3章", out)
         self.assertIn("补练", out)
 
@@ -125,14 +122,21 @@ class TestTutorEndToEndFakeModel(unittest.TestCase):
     def test_sse_style_stream_yields_step_updates(self):
         # 与 /quiz/diagnose 同款的 subgraphs updates 消费方式在 tutor 图上也可用
         from langchain_core.messages import AIMessage, HumanMessage
+        from langchain_core.tools import tool as lc_tool
+
+        @lc_tool
+        def diagnose() -> str:
+            """学情诊断"""
+            return "发现：无数据"
 
         model = ScriptedToolCallModel([
             AIMessage(content="", tool_calls=[
                 {"name": "diagnose", "args": {}, "id": "c1"}]),
             AIMessage(content="done"),
         ])
-        graph = None
-        with mock.patch.object(tutor, "make_model", return_value=model):
+        with mock.patch.object(tutor, "make_model", return_value=model), \
+             mock.patch.object(tutor, "build_tutor_tools",
+                               return_value=[diagnose]):
             graph = tutor.build_tutor_graph("u1")
 
         async def run():

@@ -7,7 +7,6 @@ import unittest
 from unittest import mock
 
 from app.api.routes.quiz import _diagnosis_events
-from app.graphs.native import messages_to_steps
 from tests._fake_model import ScriptedToolCallModel
 
 

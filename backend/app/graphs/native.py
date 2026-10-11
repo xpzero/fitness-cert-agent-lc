@@ -39,15 +39,18 @@ def build_native_agent(*, model, tools: list[BaseTool],
 def messages_to_steps(messages: Iterable) -> list[dict]:
     """ToolMessage 轨迹 → steps 记录（tool/input/thought/output）。
 
-    thought 取对应 tool_call 前最后一条模型文本（原生循环里模型未必
+    thought 取对应 tool_call 前最近的模型文本（同一条 AI 消息里
+    文本与 tool_calls 共存时该文本即 thought；原生循环里模型未必
     每步都说话，取不到给空串——前端已容错）。
     """
     steps: list[dict] = []
     last_text = ""
     for m in messages:
         kind = getattr(m, "type", "")
-        if kind == "ai" and not getattr(m, "tool_calls", None):
-            last_text = str(m.content or "")[:200]
+        if kind == "ai":
+            text = str(m.content or "")[:200]
+            if text:
+                last_text = text
         elif kind == "tool":
             steps.append({"tool": getattr(m, "name", ""),
                           "input": None, "thought": last_text,
