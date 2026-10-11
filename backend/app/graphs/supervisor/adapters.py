@@ -207,9 +207,8 @@ def _quizgen_adapter(compiled):
     return run
 
 
-def _tutor_adapter(_unused_compiled=None):
-    """导师 agent：忽略传入的占位子图——导师图须按 state.user_id 现装
-    （工具闭包绑定用户），这是它与静态子图适配器的唯一差异。"""
+def _tutor_adapter(_compiled=None):
+    """导师 agent：无静态子图——导师图按 state.user_id 现装（工具闭包绑定用户）。"""
 
     def run(state: MainState) -> dict:
         from app.graphs.tutor.graph import run_tutor
@@ -223,7 +222,8 @@ def _tutor_adapter(_unused_compiled=None):
     return run
 
 
-# 已填实子图的适配器注册表；新子图接入时在此登记（intent 名与节点名一致）
+# 适配器注册表；新子图接入时在此登记（intent 名与节点名一致）。
+# 签名统一 (compiled=None)：静态子图适配器闭包持有 compiled；tutor 不用。
 ADAPTERS = {
     "qa": _qa_adapter,
     "planning": _planning_adapter,
