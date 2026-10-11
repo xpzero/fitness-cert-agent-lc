@@ -13,4 +13,4 @@ class MainState(TypedDict):
     user_id: str
     intent: str  # planning | qa | practice | quizgen | tutor | smalltalk
     intent_confidence: float
-    subgraph_output: dict
+    reply: dict

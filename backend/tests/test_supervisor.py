@@ -83,16 +83,16 @@ class TestPlanningAdapter(unittest.TestCase):
                                  "backup": "acsm_cpt", "backup_reason": "学术背书"},
             "cert_comparison": [{"name": "NSCA-CPT", "issuer": "美国国家体能协会",
                                  "fee_range": "约 2180 元"}],
-            "plan_status": "draft", "final": "",
+            "plan_status": "draft", "text": "",
         }
 
     def test_formats_draft_and_points_to_tab(self):
         stub = _StubGraph(self._result())
-        out = _planning_adapter(stub)(main_state("帮我做学习计划"))["subgraph_output"]
-        self.assertIn("证书对比", out["final"])
-        self.assertIn("性价比最优", out["final"])
-        self.assertIn("① 基础扫盲", out["final"])
-        self.assertIn("「规划」标签页", out["final"])
+        out = _planning_adapter(stub)(main_state("帮我做学习计划"))["reply"]
+        self.assertIn("证书对比", out["text"])
+        self.assertIn("性价比最优", out["text"])
+        self.assertIn("① 基础扫盲", out["text"])
+        self.assertIn("「规划」标签页", out["text"])
         self.assertEqual(out["plan"]["weeks"], 8)
 
     def test_input_state_and_thread(self):
@@ -117,19 +117,19 @@ class TestQuizgenAdapter(unittest.TestCase):
     def test_accepted_question_formatted(self):
         stub = _StubGraph({"accepted": [self._draft()], "rejected": [
             {"stem": "s", "reason": "grounding 0.1 < 0.9"}]})
-        out = _quizgen_adapter(stub)(main_state("考我一道"))["subgraph_output"]
-        self.assertIn("卧推的主要目标肌群是？", out["final"])
-        self.assertIn("答案：A", out["final"])
+        out = _quizgen_adapter(stub)(main_state("考我一道"))["reply"]
+        self.assertIn("卧推的主要目标肌群是？", out["text"])
+        self.assertIn("答案：A", out["text"])
         # 闸门拒绝是建设过程：只进日志，不进用户文案（第 5 课调整）
-        self.assertNotIn("未过闸", out["final"])
+        self.assertNotIn("未过闸", out["text"])
         self.assertEqual(out["questions"][0]["stem"], "卧推的主要目标肌群是？")  # 结构化透传
 
     def test_all_rejected_message(self):
         # 选中了考点但全被拒：文案走"未过质量闸"分支，且带 exclude 重试一次
         stub = _StubGraph({"exam_points": [{"id": "T1.1", "title": "卧推", "chapter": "一"}],
                            "accepted": [], "rejected": [{"stem": "s", "reason": "r"}]})
-        out = _quizgen_adapter(stub)(main_state("出一道题"))["subgraph_output"]
-        self.assertIn("未通过质量闸", out["final"])
+        out = _quizgen_adapter(stub)(main_state("出一道题"))["reply"]
+        self.assertIn("未通过质量闸", out["text"])
         self.assertEqual(len(stub.calls), 2)
         self.assertEqual(stub.calls[1][0]["exclude_points"], ["T1.1"])
         self.assertEqual(out["questions"], [])
@@ -168,13 +168,13 @@ class TestMainGraphComposition(unittest.TestCase):
         with mock.patch.object(supervisor_router, "_get_router_model",
                                return_value=_FakeRouterModel("qa", 0.9)):
             result = g.invoke(main_state("卧推的目标肌群是什么？"))
-        self.assertIn("胸大肌", result["subgraph_output"]["final"])
+        self.assertIn("胸大肌", result["reply"]["text"])
         self.assertEqual(len(stub.calls), 1)
 
     def test_practice_intent_hits_todo(self):
         g = build_main_graph({})
         result = g.invoke(main_state("我要刷题"))
-        self.assertIn("「刷题」标签页", result["subgraph_output"]["final"])
+        self.assertIn("「刷题」标签页", result["reply"]["text"])
 
 
 if __name__ == "__main__":

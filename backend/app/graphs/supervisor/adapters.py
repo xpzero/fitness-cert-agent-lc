@@ -36,7 +36,7 @@ def _recent_history(state: MainState) -> list[dict]:
 
 
 def _qa_adapter(compiled):
-    """messages → QAState；结果 → subgraph_output（含结构化 sources）。"""
+    """messages → QAState；结果 → reply（含结构化 sources）。"""
 
     def run(state: MainState) -> dict:
         subgraph_state = compiled.invoke(
@@ -63,8 +63,8 @@ def _qa_adapter(compiled):
             if cid in by_id
         ]
         return {
-            "subgraph_output": {
-                "final": subgraph_state.get("final_answer", ""),
+            "reply": {
+                "text": subgraph_state.get("final_answer", ""),
                 "refused": subgraph_state.get("outcome") == "refused",
                 "error": subgraph_state.get("outcome") == "service_error",
                 "citations": subgraph_state.get("cited_chunk_ids", []),
@@ -97,7 +97,7 @@ def _planning_adapter(compiled):
                 "plan": {},
                 "human_feedback": "",
                 "plan_status": "draft",
-                "final": "",
+                "text": "",
             },
             {
                 "configurable": {
@@ -129,8 +129,8 @@ def _planning_adapter(compiled):
             "（身份/城市/每周学习时长/考试日期）并确认，即可生成并保存你的专属计划。"
         )
         return {
-            "subgraph_output": {
-                "final": final.strip(),
+            "reply": {
+                "text": final.strip(),
                 "plan": plan,
                 "path": path,
                 "cert_compare": subgraph_state.get("cert_comparison", []),
@@ -196,8 +196,8 @@ def _quizgen_adapter(compiled):
                 "请检查 syllabus 摄取与 DEFAULT_CERT 配置。"
             )
         return {
-            "subgraph_output": {
-                "final": final,
+            "reply": {
+                "text": final,
                 "questions": [asdict(d) for d in accepted],
                 "rejected": rejected,
             }
@@ -216,7 +216,7 @@ def _tutor_adapter(_unused_compiled=None):
 
         out = run_tutor(state["user_id"], _last_user_message(state),
                         history=_recent_history(state))
-        return {"subgraph_output": {"final": out.get("reply") or FALLBACK_NOTICE_MSG,
+        return {"reply": {"text": out.get("reply") or FALLBACK_NOTICE_MSG,
                                     "tutor_steps": out.get("steps_trace") or []}}
 
     run.__name__ = "run_tutor"

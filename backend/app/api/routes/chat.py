@@ -76,19 +76,19 @@ async def chat(req: ChatRequest):
                 if node in (END, "__end__"):
                     continue
                 yield sse({"event": "node_end", "node": node})
-                subgraph_output = (
-                    update.get("subgraph_output") if isinstance(update, dict) else None
+                reply = (
+                    update.get("reply") if isinstance(update, dict) else None
                 )
-                if subgraph_output and subgraph_output.get("final"):
-                    final_text = subgraph_output["final"]
-                    sources = subgraph_output.get("sources", [])
+                if reply and reply.get("text"):
+                    final_text = reply["text"]
+                    sources = reply.get("sources", [])
         if not tokens_streamed:  # 拒答/错误路径无 token 流，整段补发
             for i in range(0, len(final_text), 120):
                 yield sse({"event": "token", "text": final_text[i : i + 120]})
         elif final_text and not final_text.startswith(REFUSAL_TEXT_PREFIX):
             # 流式后 format_answer 的引用重排：发增量修正事件（前端整体替换）
             yield sse({"event": "final_replace", "text": final_text})
-        yield sse({"event": "done", "final": final_text, "sources": sources})
+        yield sse({"event": "done", "text": final_text, "sources": sources})
         trace_chat(req.user_id, req.message, thread_id, final_text)
         _persist(req.user_id, session_id, req.message, final_text, sources)
 

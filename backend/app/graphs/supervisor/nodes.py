@@ -11,8 +11,8 @@ FALLBACK_NOTICE_MSG = (
 
 def smalltalk(state: MainState) -> dict:
     return {
-        "subgraph_output": {
-            "final": "你好！我是健身教练考证助教。可以问我教材知识"
+        "reply": {
+            "text": "你好！我是健身教练考证助教。可以问我教材知识"
             "（例如：卧推的目标肌群是什么）、对比证书与制定学习计划，"
             "或让我出一道题。"
         }
@@ -20,4 +20,4 @@ def smalltalk(state: MainState) -> dict:
 
 
 def fallback_notice(state: MainState) -> dict:
-    return {"subgraph_output": {"final": FALLBACK_NOTICE_MSG}}
+    return {"reply": {"text": FALLBACK_NOTICE_MSG}}
