@@ -1,14 +1,20 @@
-"""两级路由：规则快路径直通；未命中走 chat_fast LLM 路由（W5）。
+"""两级路由：规则快路径直通；未命中走轻模型结构化路由（W5）。
 
 低置信的开放式消息交给导师（tutor 是柔性处理者，smalltalk 除外）。
+LLM 路由用 with_structured_output（RouterDecision schema），替代手写 JSON 协议。
 """
 
 from __future__ import annotations
 
+from typing import Literal, cast
+
+from langchain_core.messages import HumanMessage
+from pydantic import BaseModel, Field
+
 from app.config import settings
+from app.graphs.native import make_model
 from app.graphs.supervisor.adapters import REGISTERED
 from app.graphs.supervisor.state import MainState
-from app.llm import llm_client
 from app.prompts.router import ROUTER_PROMPT
 
 LLM_ROUTABLE = ("qa", "quizgen", "planning", "practice", "tutor", "smalltalk")
@@ -36,6 +42,28 @@ KEYWORD_ROUTES: dict[str, tuple[str, ...]] = {
 RULE_CONFIDENCE = 0.7
 
 
+class RouterDecision(BaseModel):
+    """结构化路由判定：意图 + 置信度 + 一句话理由。"""
+
+    intent: Literal["qa", "quizgen", "planning", "practice",
+                    "tutor", "smalltalk"] = Field(description="意图标签")
+    confidence: float = Field(description="置信度，0 到 1", ge=0.0, le=1.0)
+    reason: str = Field(default="", description="一句话判定理由")
+
+
+_router_model = None
+
+
+def _get_router_model():
+    """结构化路由模型（fast 档，懒初始化单例，绑定 RouterDecision 输出）。"""
+    global _router_model
+    if _router_model is None:
+        _router_model = make_model(
+            settings.fast_model, settings.fast_base_url,
+            settings.llm_api_key).with_structured_output(RouterDecision)
+    return _router_model
+
+
 def _keyword_intent(text: str) -> str | None:
     for intent, keywords in KEYWORD_ROUTES.items():
         if any(k in text for k in keywords):
@@ -44,7 +72,7 @@ def _keyword_intent(text: str) -> str | None:
 
 
 def classify_intent(state: MainState) -> dict:
-    """两级路由：规则快路径直通；未命中（或疑似复合请求）走 chat_fast LLM 路由。"""
+    """两级路由：规则快路径直通；未命中（或疑似复合请求）走结构化 LLM 路由。"""
     text = str(state["messages"][-1]["content"]) if state["messages"] else ""
     if not text.strip():
         return {"intent": "smalltalk", "intent_confidence": 0.9}
@@ -52,12 +80,12 @@ def classify_intent(state: MainState) -> dict:
     if not composite and (intent := _keyword_intent(text)):
         return {"intent": intent, "intent_confidence": RULE_CONFIDENCE}
     try:
-        out = llm_client.chat_json(
-            [{"role": "user", "content": ROUTER_PROMPT.format(text=text)}],
+        decision = cast(RouterDecision, _get_router_model().invoke(
+            [HumanMessage(content=ROUTER_PROMPT.format(text=text))],
             temperature=0.1,
-        )
-        intent = str(out.get("intent", "qa"))
-        confidence = float(out.get("confidence", 0.5) or 0.5)
+        ))
+        intent = decision.intent
+        confidence = decision.confidence
     except Exception:  # noqa: BLE001 — 路由失败兜底 qa（原 P1 行为）；
         # 不再走低置信改道：路由 LLM 都失败时导师（更重的 LLM 链路）大概率也不可用
         return {"intent": "qa", "intent_confidence": 0.5}

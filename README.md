@@ -3,7 +3,7 @@
 [![ci](https://github.com/xpzero/fitness-cert-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/xpzero/fitness-cert-agent/actions/workflows/ci.yml)
 
 LangGraph 多子图 + 溯源 RAG，面向健身教练国际四大认证（**NSCA-CPT 主攻**，ACE/ACSM/NASM 备选）。
-引擎证书无关（cert_id 参数化）。设计文档见 [detailed-design.md](detailed-design.md)，调研见 [research-report.md](research-report.md)。
+引擎证书无关（cert_id 参数化）。
 
 ## 快速开始
 
@@ -77,7 +77,7 @@ backend/          # Python 后端（uv 工程：pyproject + .venv）
   scripts/        # ingest(种子语料)、batch_generate(批量出题)、ocr_pdf
   tests/          # 单元测试（判分/SM-2/RAG 纯函数）
 frontend/         # React+shadcn 前端（lib/types.ts 共享类型 + constants.ts；dev/preview 代理 API）
-docs/             # agent-upgrade-plan.md（W1–W8 升级方案与实施记录）
+docs/             # 工程踩坑笔记 + 架构流程图（RAG 摄取/查询）
 Makefile          # 根编排（infra/api/serve/web-*/test/eval-*）
 docker-compose.yml # PostgreSQL(pgvector) + Langfuse
 ```
