@@ -1,8 +1,8 @@
 """quizgen 门闸链单测（mock 数据库与 LLM，无外部依赖）。
 
-覆盖：QuestionDraft 载体、并行生成（W1）、GroundingGate 逐字定位判定、
+覆盖：QuestionDraft 载体、并行生成、GroundingGate 逐字定位判定、
 DedupeGate 查重、QualityGate 质量分门槛与打分失败兜底（W2 起只打分不插库）、
-AdversarialGate 双 persona 攻击与回退开关（W2）。
+AdversarialGate 双 persona 攻击与回退开关。
 """
 from __future__ import annotations
 

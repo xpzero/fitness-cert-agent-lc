@@ -1,4 +1,4 @@
-"""讲题教练单测（W4）：状态机流转、变式题挂载、超轮强制讲透（mock LLM/DB）。"""
+"""讲题教练单测：状态机流转、变式题挂载、超轮强制讲透（mock LLM/DB）。"""
 from __future__ import annotations
 
 import unittest

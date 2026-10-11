@@ -1,6 +1,6 @@
 """主图：意图路由 supervisor（设计文档 §4.0；W5 升级为两级路由 + 导师 agent）。
 
-包内按职责平铺（自原单文件 supervisor.py 迁移，行为与对外 API 不变）：
+包内按职责平铺：
 - state.py    MainState + merge_messages 归约器
 - router.py   两级路由：规则快路径 + 结构化 LLM 路由（with_structured_output）
 - nodes.py    smalltalk / fallback_notice 平凡节点

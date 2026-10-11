@@ -1,4 +1,4 @@
-"""主图状态：messages 归约器 + MainState（从原 supervisor.py 平铺迁移）。"""
+"""主图状态：messages 归约器 + MainState。"""
 from __future__ import annotations
 
 from typing import Annotated, TypedDict

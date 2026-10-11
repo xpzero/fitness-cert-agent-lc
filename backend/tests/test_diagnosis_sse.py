@@ -1,4 +1,4 @@
-"""SSE 学情诊断消费循环单测：原生 updates 流 → 旧版 step/report 事件格式。"""
+"""SSE 学情诊断消费循环单测：updates 流 → step/report 事件格式。"""
 from __future__ import annotations
 
 import asyncio
@@ -51,11 +51,11 @@ class TestDiagnosisSSEEvents(unittest.TestCase):
                 "app.graphs.diagnosis.graph.finalize_report",
                 side_effect=lambda state, u, c="": _fake_report()) as fr:
             events = _run(self._graph())
-        # 事件序列：step × 2 → report（旧版无中间帧）
+        # 事件序列：step × 2 → report
         self.assertEqual([e["event"] for e in events],
                          ["step", "step", "report"])
         s1, s2 = events[0], events[1]
-        # 旧版 step 帧字段：tool / thought / output（+input，前端容错忽略）
+        # step 帧字段：tool / thought / output（+input，前端容错忽略）
         self.assertEqual(s1["tool"], "chapter_accuracy")
         self.assertEqual(s1["thought"], "")
         self.assertIn("output", s1)
