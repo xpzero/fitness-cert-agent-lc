@@ -146,11 +146,11 @@ def _get_session(session_id: str) -> dict | None:
 
 
 def _update_session(session_id: str, *, messages: list[dict], phase: str,
-                    status: str = "active", variant_id: str | None = None) -> None:
+                    variant_id: str | None = None) -> None:
     session = _sessions.get(session_id)
     if not session:
         return
-    session.update(messages=messages, phase=phase, status=status,
+    session.update(messages=messages, phase=phase,
                    variant_question_id=variant_id or session.get(
                        "variant_question_id"))
 
@@ -162,7 +162,7 @@ def get_active_session(user_id: str, question_id: str) -> dict | None:
     for session in reversed(list(_sessions.values())):  # 后建的是最新会话
         if (session["user_id"] != user_id
                 or session["question_id"] != question_id
-                or session["status"] != "active"):
+                or session["phase"] == "done"):
             continue
         out = {"session_id": session["id"], "messages": session["messages"],
                "phase": session["phase"]}
@@ -189,7 +189,7 @@ def start_session(user_id: str, question_id: str) -> dict:
     messages = [{"role": "coach", "content": opening["reply"]}]
     _sessions[session_id] = {
         "id": session_id, "user_id": user_id, "question_id": question_id,
-        "messages": messages, "status": "active",
+        "messages": messages,
         "phase": opening["next_phase"], "variant_question_id": None,
     }
     return {"session_id": session_id, "greeting": opening["reply"],
@@ -199,7 +199,7 @@ def start_session(user_id: str, question_id: str) -> dict:
 def send_message(session_id: str, text: str) -> dict:
     """考生发言 → 教练回应；verify 阶段就绪时携带变式题。"""
     session = _get_session(session_id)
-    if not session or session["status"] != "active":
+    if not session or session["phase"] == "done":
         return {"error": "会话不存在或已结束"}
     question = _load_question(session["question_id"])
     user_answer = _last_user_answer(session["user_id"], session["question_id"])
@@ -281,6 +281,6 @@ def answer_variant(session_id: str, answer: str) -> dict:
     messages = session["messages"] + [
         {"role": "user", "content": f"变式题我选：{answer}"},
         {"role": "coach", "content": closing}]
-    _update_session(session_id, messages=messages, phase="done", status="done")
+    _update_session(session_id, messages=messages, phase="done")
     return {"correct": graded.is_correct, "detail": graded.detail,
             "sm2_updated": sm2_updated, "closing": closing}

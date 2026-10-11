@@ -47,7 +47,7 @@ class TestCoachSession(unittest.TestCase):
         self.assertIn("你为什么选 B", out["greeting"])
         # 一次性会话：会话行落在进程内存储，键即 session_id
         self.assertIn(out["session_id"], store)
-        self.assertEqual(store[out["session_id"]]["status"], "active")
+        self.assertEqual(store[out["session_id"]]["phase"], "probe")
 
     def test_get_active_session_semantics(self):
         with _SessionStore() as store:
@@ -147,7 +147,7 @@ class TestAnswerVariant(unittest.TestCase):
         joined = "\n".join(conn.executed)
         self.assertIn("UPDATE wrong_book", joined)
         self.assertIn("INSERT INTO user_answers", joined)
-        self.assertEqual(store["s1"]["status"], "done")
+        self.assertEqual(store["s1"]["phase"], "done")
         self.assertEqual(store["s1"]["phase"], "done")
 
     def test_wrong_answer_adds_variant_to_wrongbook(self):
