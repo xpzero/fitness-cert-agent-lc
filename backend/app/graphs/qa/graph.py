@@ -76,12 +76,10 @@ class QAState(TypedDict):
     candidates: list[
         dict
     ]  # {chunk_id, page_no, section_path, content, authority_level, score}
-    verdict: str  # correct | ambiguous | wrong | error
+    outcome: str   # cited（引用核实通过）| rewriting（改写重检）| refused（不可溯源拒答）| service_error（生成端故障）
     draft_answer: str
     cited_chunk_ids: list[str]
     final_answer: str
-    refused: bool
-    error: bool               # 生成端服务错误（区别于"拒答"：有 final 文案但非知识性回答）
     rewrite_rounds: int
 
 
@@ -107,7 +105,8 @@ def _expand_query_with_glossary(query: str) -> str:
 def rewrite_query(state: QAState) -> dict:
     # 第二轮复用首轮改写结果（省一次 LLM 调用）；首轮才真正改写
     if state.get("rewrite_rounds", 0) > 0 and state.get("rewritten_query"):
-        return {"refused": False, "rewrite_rounds": state.get("rewrite_rounds", 0)}
+        return {"outcome": "rewriting",
+                "rewrite_rounds": state.get("rewrite_rounds", 0)}
     query = state["query"]
     # 会话内有上文 → 带历史的改写（"它的第一步"里的"它"才有得解析）
     history = [m for m in (state.get("history") or [])
@@ -132,7 +131,6 @@ def rewrite_query(state: QAState) -> dict:
     # 口语肌群名→解剖学标准名的映射，不叠加则检索仍用口语词
     return {
         "rewritten_query": _expand_query_with_glossary(rewritten_base),
-        "refused": False,
         "rewrite_rounds": state.get("rewrite_rounds", 0),
     }
 
@@ -152,11 +150,11 @@ def guard_no_candidates(state: QAState) -> dict:
 
     原 LLM 判级实测 9-11s（与 generate 同量级），且其"能否回答"判断与
     generate_draft 的 REFUSAL_MARKER + verify_citations 的引用校验功能重叠
-    ——去重后只保留短路作用：候选为空 → wrong（直接拒答），否则放行给生成链路。
+    ——去重后只保留短路作用：候选为空 → refused（直接拒答），否则放行给生成链路。
     """
     if not state["candidates"]:
-        return {"verdict": "wrong"}
-    return {"verdict": "correct"}
+        return {"outcome": "refused"}
+    return {"outcome": "cited"}
 
 
 def generate_draft(state: QAState) -> dict:
@@ -190,7 +188,7 @@ def generate_draft(state: QAState) -> dict:
             "draft_answer": REFUSAL_MARKER,
             "cited_chunk_ids": [],
             "final_answer": f"生成服务暂时不可用（稍后重试）：{str(e)[:120]}",
-            "verdict": "error",
+            "outcome": "service_error",
         }
     return {"draft_answer": draft, "cited_chunk_ids": extract_citations(draft)}
 
@@ -204,12 +202,12 @@ def verify_citations(state: QAState) -> dict:
     3. 支撑度抽查：逐条引用句先做词面快筛（零成本），不过关的合并成一次
        批量语义判定（NLI-lite，控延迟），支持率 ≥ min_citation_support_ratio 才放行
 
-    任一步不过 → ambiguous + rewrite_rounds+1，回改写环节重检；
+    任一步不过 → rewriting + rewrite_rounds+1，回改写环节重检；
     重试耗尽由 route_after_verify 路由到拒答。
     """
     draft = state["draft_answer"]
     if REFUSAL_MARKER in draft and not state["cited_chunk_ids"]:
-        return {"verdict": "wrong"}
+        return {"outcome": "refused"}
     known_chunk_ids = {candidate["chunk_id"] for candidate in state["candidates"]}
     missing = find_missing_citations(draft, known_chunk_ids)
     rounds = state.get("rewrite_rounds", 0)
@@ -245,9 +243,9 @@ def verify_citations(state: QAState) -> dict:
              or supported / checked >= settings.min_citation_support_ratio)
     )
     if all_checks_passed:
-        return {"verdict": "correct"}
+        return {"outcome": "cited"}
     return {
-        "verdict": "ambiguous",
+        "outcome": "rewriting",
         "rewrite_rounds": rounds + 1,
         "final_answer": f"（内部校验未通过：缺引用 {missing or '无'}，"
         f"支持率 {supported}/{checked}）"
@@ -257,7 +255,7 @@ def verify_citations(state: QAState) -> dict:
 
 
 def refuse_answer(state: QAState) -> dict:
-    return {"refused": True, "final_answer": REFUSAL_ANSWER_TEXT}
+    return {"outcome": "refused", "final_answer": REFUSAL_ANSWER_TEXT}
 
 
 def format_answer(state: QAState) -> dict:
@@ -290,19 +288,19 @@ def _sentences_citing(draft: str, chunk_id: str) -> list[str]:
 
 
 def route_after_verify(state: QAState) -> str:
-    if state["verdict"] == "error":  # 服务错误 → 直接出错误说明，不走拒答话术
+    if state["outcome"] == "service_error":  # 服务错误 → 直接出错误说明，不走拒答话术
         return "emit_error"
     if state.get("rewrite_rounds", 0) >= MAX_REWRITE_ROUNDS:
         return "refuse_answer"
-    return {"correct": "format_answer", "ambiguous": "rewrite_query",
-            "wrong": "refuse_answer"}.get(state["verdict"], "rewrite_query")
+    return {"cited": "format_answer", "rewriting": "rewrite_query",
+            "refused": "refuse_answer"}.get(state["outcome"], "rewrite_query")
 
 
 def emit_error(state: QAState) -> dict:
     """透传生成端错误（final_answer 已由 generate_draft 写入）。
 
-    error 与 refused 分离：服务错误不是"拒答"，下游（前端/观测）可区分两种语义。"""
-    return {"error": True}
+    service_error 与 refused 分离：服务错误不是"拒答"，下游（前端/观测）可区分两种语义。"""
+    return {"outcome": "service_error"}
 
 
 def build_qa_graph():

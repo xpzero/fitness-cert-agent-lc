@@ -30,11 +30,11 @@ def build_tutor_tools(user_id: str) -> list:
         if not query:
             return "query 为空"
         state = build_qa_graph().invoke({
-            "query": query, "refused": False, "error": False,
-            "rewrite_rounds": 0, "candidates": [], "cited_chunk_ids": [],
+            "query": query, "rewrite_rounds": 0,
+            "candidates": [], "cited_chunk_ids": [],
             "draft_answer": "", "final_answer": ""})
         answer = state.get("final_answer", "")
-        if state.get("refused"):
+        if state.get("outcome") == "refused":
             return "（该问题无法从教材溯源，已拒答）"
         return answer[:800]
 

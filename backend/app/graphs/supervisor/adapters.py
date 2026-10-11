@@ -43,8 +43,6 @@ def _qa_adapter(compiled):
             {
                 "query": _last_user_message(state),
                 "history": _recent_history(state),
-                "refused": False,
-                "error": False,
                 "rewrite_rounds": 0,
                 "candidates": [],
                 "cited_chunk_ids": [],
@@ -67,8 +65,8 @@ def _qa_adapter(compiled):
         return {
             "subgraph_output": {
                 "final": subgraph_state.get("final_answer", ""),
-                "refused": subgraph_state.get("refused", False),
-                "error": subgraph_state.get("error", False),
+                "refused": subgraph_state.get("outcome") == "refused",
+                "error": subgraph_state.get("outcome") == "service_error",
                 "citations": subgraph_state.get("cited_chunk_ids", []),
                 "sources": sources,
             }
