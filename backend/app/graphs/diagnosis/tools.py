@@ -1,6 +1,6 @@
 """学情诊断 agent 的工具集：全部确定性 SQL，engine 注入。
 
-原生 @tool 定义：参数 schema 由类型注解自动生成（替代旧版 _arg 容错解析）。
+原生 @tool 定义：参数 schema 由类型注解自动生成（替代手写容错解析）。
 user_id 由 build_diagnosis_tools 闭包绑定——agent 不可指定他人，
 也无需在每步重复传。每个工具返回紧凑文本（进 transcript，400 字内）。
 

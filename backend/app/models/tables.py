@@ -101,7 +101,7 @@ class Chunk(Base):
 
     __tablename__ = "chunks"
     # 检索索引：HNSW（dense 向量近邻）+ trgm GIN（中文 trigram 词面）。
-    # 新库由 create_all 随表创建；旧库（表已存在时 create_all 跳过索引）由
+    # 新库由 create_all 随表创建；存量库（表已存在时 create_all 跳过索引）由
     # init_db 的 CREATE INDEX IF NOT EXISTS 兜底。
     __table_args__ = (
         Index("idx_chunks_embedding", "embedding", postgresql_using="hnsw",
@@ -226,7 +226,7 @@ class StudyPlan(Base):
 
 
 class DiagnosisReport(Base):
-    """学情诊断 agent 的报告存档（W3）。"""
+    """学情诊断 agent 的报告存档。"""
     __tablename__ = "diagnosis_reports"
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     user_id: Mapped[str] = mapped_column(String(64))

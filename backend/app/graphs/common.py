@@ -3,7 +3,7 @@
 build_linear_graph：纯线性链（practice/quizgen）的图装配助手——
 节点按传入顺序串成 entry → n1 → … → END。含条件边的图（qa/planning）不用此助手。
 
-build_agent_loop：ReAct 式工具环（diagnosis/tutor 共用，W3/W5）——
+build_agent_loop：ReAct 式工具环——
 chat_json 结构化决策（{thought, action, action_input}），不依赖原生
 function-calling；LLM 失败/未知工具/步数耗尽统一走 finish_fn 收尾（不喂回错误
 重试，防死循环）。步骤经 get_stream_writer 发 {"step": …} 自定义事件

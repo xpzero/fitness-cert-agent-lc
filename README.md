@@ -9,7 +9,7 @@ LangGraph 多子图 + 溯源 RAG，面向健身教练国际四大认证（**NSCA
 
 ```bash
 cd backend && uv sync && cd ..    # 后端依赖（Python ≥3.11；首次需 uv）
-cp backend/.env.example backend/.env  # 填入 LLM_API_KEY（旧名 ZHIPU_API_KEY 仍兼容）
+cp backend/.env.example backend/.env  # 填入 LLM_API_KEY
 make infra                        # PostgreSQL(pgvector) + Langfuse
 make ingest                       # 考点树 + 种子语料入库
 make web-build                    # 构建 React 前端（frontend/）

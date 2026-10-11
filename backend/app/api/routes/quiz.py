@@ -1,4 +1,4 @@
-"""刷题端点：开始/交卷/收藏/徽章/考点覆盖 + 学情诊断（W3）+ 讲题教练（W4）。
+"""刷题端点：开始/交卷/收藏/徽章/考点覆盖 + 学情诊断+ 讲题教练。
 
 本路由服务于 practice 子图（刷题判分链路）；AI 出题是另一张 quizgen 子图
 （对话内「考我」触发，或 scripts/batch_generate.py 批量出题）——生成是
@@ -52,41 +52,66 @@ def quiz_submit(req: QuizSubmitRequest) -> dict:
 
 @router.post("/quiz/diagnose")
 async def quiz_diagnose(req: DiagnoseRequest):
-    """SSE 学情诊断（W3）：step（调查步骤时间线）→ report（结构化报告）。
+    """SSE 学情诊断：step（调查步骤时间线）→ report（结构化报告）。
 
-    agent 每调一次工具推一条 step 事件（含 thought），前端渲染为可折叠
-    时间线；结束后 report 事件带完整诊断（含 plan_adjusted）。
+    原生工具环经 astream(stream_mode=["updates"], subgraphs=True) 暴露每次
+    工具调用：agent 子图内 tools 节点的增量 update 累积成消息轨迹，再由
+    messages_to_steps 转成 step 记录（tool/thought/output）供前端时间线。
+    结束后 report 事件带完整诊断（含 plan_adjusted）。
     """
-    from app.graphs.diagnosis.graph import build_diagnosis_graph, finalize_report
+    from app.graphs.diagnosis.graph import build_diagnosis_graph
 
     graph = build_diagnosis_graph(req.user_id, req.cert_id)
 
     async def sse_stream():
         yield sse({"event": "start"})
-        final_state: dict = {}
-        async for stream_mode, payload in graph.astream(
-            {"task": f"诊断用户 {req.user_id} 的学情并给出补弱建议",
-             "user_id": req.user_id, "cert_id": req.cert_id,
-             "steps": [], "final_report": None},
-            stream_mode=["custom", "updates"],
-        ):
-            if stream_mode == "custom" and isinstance(payload, dict):
-                if "step" in payload:
-                    yield sse({"event": "step", **payload["step"]})
-                continue
-            if isinstance(payload, dict):
-                for _node, update in payload.items():
-                    if isinstance(update, dict):
-                        final_state.update({k: v for k, v in update.items()
-                                            if k in ("steps", "final_report",
-                                                     "degraded")})
-        report = finalize_report(final_state, req.user_id, req.cert_id)
-        yield sse({"event": "report", "report": report})
+        async for event in _diagnosis_events(graph, req.user_id, req.cert_id):
+            yield sse(event)
 
     return StreamingResponse(sse_stream(), media_type="text/event-stream")
 
 
-# ---------------------------------------------------------------- 讲题教练（W4）
+async def _diagnosis_events(graph, user_id: str, cert_id: str):
+    """消费原生 agent 的 updates 流，产出 step / report 事件序列。"""
+    from app.graphs.diagnosis.graph import finalize_report
+    from app.graphs.native import messages_to_steps
+
+    final_state: dict = {}
+    msgs: list = []          # 子图内累积的消息轨迹（model/tools 增量）
+    emitted = 0              # 已发出的 step 数
+    async for ns, _mode, payload in graph.astream(
+        {"messages": [{"role": "user",
+                       "content": f"诊断用户 {user_id} 的学情并给出补弱建议"}],
+         "user_id": user_id, "cert_id": cert_id,
+         "steps": [], "final_report": None},
+        stream_mode=["updates"], subgraphs=True,
+    ):
+        if not isinstance(payload, dict):
+            continue
+        if not ns:
+            # 顶层节点 update：收集收尾状态（steps/final_report/degraded）
+            for update in payload.values():
+                if isinstance(update, dict):
+                    final_state.update({k: v for k, v in update.items()
+                                        if k in ("steps", "final_report",
+                                                 "degraded")})
+            continue
+        # agent 子图内：累积消息，tools 节点出结果即转 step 增量发出
+        for node, update in payload.items():
+            if not (isinstance(update, dict) and update.get("messages")):
+                continue
+            msgs.extend(update["messages"])
+            if node == "tools":
+                steps = messages_to_steps(msgs)
+                for s in steps[emitted:]:
+                    yield {"event": "step", **s}
+                emitted = len(steps)
+    report = finalize_report(final_state, user_id, cert_id)
+    yield {"event": "report", "report": report}
+
+
+
+# ---------------------------------------------------------------- 讲题教练
 
 @router.post("/quiz/coach/start")
 def coach_start(req: CoachStartRequest) -> dict:

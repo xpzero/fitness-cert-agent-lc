@@ -16,11 +16,11 @@ load_dotenv(PROJECT_ROOT / ".env")
 @dataclass
 class Settings:
     # LLM
-    # key 通用命名（gen 侧换厂商时不必再读智谱名的变量）；LLM_API_KEY 缺省回退旧名
+    # key 通用命名（gen 侧换厂商时不必再读智谱名的变量）；LLM_API_KEY 缺省回退
     llm_api_key: str = field(default_factory=lambda: os.environ.get("LLM_API_KEY")
                              or os.environ.get("ZHIPU_API_KEY", ""))
     gen_api_key: str = field(default_factory=lambda: os.environ.get("GEN_API_KEY", ""))
-    # fast 通道 base_url 按角色命名（FAST_BASE_URL），缺省回退旧名 ZHIPU_BASE_URL
+    # fast 通道 base_url 按角色命名（FAST_BASE_URL），缺省回退 ZHIPU_BASE_URL
     fast_base_url: str = field(
         default_factory=lambda: os.environ.get(
             "FAST_BASE_URL",
@@ -77,21 +77,21 @@ class Settings:
     quiz_quality_min_score: float = 4.0
     # 整份草稿的引用支持率（supported/checked）放行下限（qa verify_citations）
     min_citation_support_ratio: float = 0.6
-    # 出题并行（W1）：generate_drafts 线程池 worker 数（各考点独立，IO-bound）
+    # 出题并行：generate_drafts 线程池 worker 数（各考点独立，IO-bound）
     quizgen_parallel_workers: int = field(default_factory=lambda: int(
         os.environ.get("QUIZGEN_PARALLEL_WORKERS", "4")))
-    # 对抗评审（W2 闸门4）：关 = 行为与旧闸门链完全一致（一键回退）
+    # 对抗评审：关 = 行为与旧闸门链完全一致（一键回退）
     adversarial_gate_enabled: bool = field(default_factory=lambda: os.environ.get(
         "ADVERSARIAL_GATE_ENABLED", "1") not in ("0", "false", "False"))
     adversarial_severity_min: float = 4.0   # 较真考生投诉的最低严重级（1-5）
     guesser_confidence_min: float = 4.0     # 蒙题考生猜中且置信度达此值 → 判可猜测
-    # 学情诊断 agent（W3）：工具环最大步数（防失控；超限强制收尾）
+    # 学情诊断 agent：工具环最大步数（防失控；超限强制收尾）
     diagnosis_max_steps: int = field(default_factory=lambda: int(
         os.environ.get("DIAGNOSIS_MAX_STEPS", "8")))
-    # 讲题教练（W4）：对话轮数上限，超限强制进入完整讲解
+    # 讲题教练：对话轮数上限，超限强制进入完整讲解
     coach_max_rounds: int = field(default_factory=lambda: int(
         os.environ.get("COACH_MAX_ROUNDS", "5")))
-    # 意图路由（W5）：LLM 路由置信度低于此值的开放式消息交给导师 agent
+    # 意图路由：LLM 路由置信度低于此值的开放式消息交给导师 agent
     route_confidence_min: float = field(default_factory=lambda: float(
         os.environ.get("ROUTE_CONFIDENCE_MIN", "0.55")))
     # 词面快筛不过关、转 NLI 语义判定的引用句条数上限（控成本）

@@ -29,7 +29,7 @@ class DiagnosisState(TypedDict, total=False):
     messages: list          # create_agent 状态（对话消息）
     user_id: str
     cert_id: str
-    steps: list             # 旧版兼容轨迹（SSE/评测消费）
+    steps: list             # 调查轨迹（SSE/评测消费）
     final_report: dict | None
     degraded: bool          # True = 规则版兜底（agent 链路不可用）
 

@@ -210,7 +210,7 @@ def _quizgen_adapter(compiled):
 
 
 def _tutor_adapter(_unused_compiled=None):
-    """导师 agent（W5）：忽略传入的占位子图——导师图须按 state.user_id 现装
+    """导师 agent：忽略传入的占位子图——导师图须按 state.user_id 现装
     （工具闭包绑定用户），这是它与静态子图适配器的唯一差异。"""
 
     def run(state: MainState) -> dict:

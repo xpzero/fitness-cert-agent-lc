@@ -1,4 +1,4 @@
-"""两级路由：规则快路径直通；未命中走轻模型结构化路由（W5）。
+"""两级路由：规则快路径直通；未命中走轻模型结构化路由。
 
 低置信的开放式消息交给导师（tutor 是柔性处理者，smalltalk 除外）。
 LLM 路由用 with_structured_output（RouterDecision schema），替代手写 JSON 协议。

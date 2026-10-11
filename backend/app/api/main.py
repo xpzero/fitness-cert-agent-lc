@@ -15,7 +15,7 @@ from app.config import settings
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    """建表 + 兼容迁移 + 恢复中断的解析队列。"""
+    """建表 + 索引补齐 + 恢复中断的解析队列。"""
     from app.db import database
     from app.kb_worker import ingest_worker
 

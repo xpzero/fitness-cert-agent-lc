@@ -25,7 +25,7 @@ class Database:
 
         迁移策略（无 Alembic，保持轻量）：
         - 新库：Base.metadata.create_all 一次建全（含 tables.py 内声明的 HNSW/trgm 索引）
-        - 旧库：create_all 不迁移已存表——下方 ALTER 与 CREATE INDEX IF NOT EXISTS
+        - create_all 不迁移已存表——下方 ALTER 与 CREATE INDEX IF NOT EXISTS
           逐项兜底；给 documents 加列时需同时改 tables.py 的 Document 模型（两处保持同步）
         """
         from pgvector.sqlalchemy import Vector  # noqa: F401  确保类型已注册
@@ -50,7 +50,7 @@ class Database:
             conn.execute(text(
                 "ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now()"))
         with engine.begin() as conn:
-            # 检索索引（与 tables.Chunk.__table_args__ 同名同定义；此处覆盖旧库路径）
+            # 检索索引（与 tables.Chunk.__table_args__ 同名同定义；覆盖历史库路径）
             conn.execute(text(
                 "CREATE INDEX IF NOT EXISTS idx_chunks_embedding "
                 "ON chunks USING hnsw (embedding vector_cosine_ops)"
@@ -66,7 +66,7 @@ database = Database()  # 进程级单例（懒初始化，首次用才建 engine
 
 # --------------------------------------------------------------- 兼容层
 # get_engine / init_db 是旧的函数入口：graphs 内部与 scripts/eval 的调用点
-# 尚未迁移，经此薄委托保持可用；新代码请直接用 database.engine / database.init_db()。
+# 薄委托保持兼容；新代码请直接用 database.engine / database.init_db()。
 def get_engine():
     return database.engine
 

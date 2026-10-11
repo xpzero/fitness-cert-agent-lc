@@ -1,7 +1,7 @@
 """子图C：AI 出题（防幻觉核心，设计文档 §4.3）——P2 完整实现。
 
 入库闸门链：逐字 grounding（≥evidence_min_similarity）→ 语义查重 → 质量分（只打分）
-→ 对抗评审（W2：双 persona 攻击，幸存者入库）。
+→ 对抗评审（双 persona 攻击，幸存者入库）。
 verified=False 的题进入人工审核队列，永不出现在用户侧。
 
 结构：generate 产出 QuestionDraft（数据类，闸门链中的统一载体）→
@@ -65,7 +65,7 @@ class QuizGenState(TypedDict):
     rejected: list[dict]         # {stem, reason}
     coverage_delta: list[str]    # 本轮新覆盖的考点 id
     exclude_points: list[str]    # 批量出题时跳过重复失败的考点
-    seed_points: list[str]       # 定向出题（W4 变式题）：指定考点 id，跳过覆盖分析
+    seed_points: list[str]       # 定向出题（变式题）：指定考点 id，跳过覆盖分析
     question_type: str           # 定向题型（mock=四选一单选）；空 = 按索引轮换
 
 
@@ -74,7 +74,7 @@ class QuizGenState(TypedDict):
 def pick_points(state: QuizGenState) -> dict:
     """覆盖分析：优先取"还没有题目的考点"，其次取题最少的考点。
 
-    seed_points（W4 教练变式题）：定向出题模式，跳过覆盖分析直接用指定考点。
+    seed_points（教练变式题）：定向出题模式，跳过覆盖分析直接用指定考点。
     SQL 要点：只取叶子考点（parent_id <> ''）；`q.exam_point_ids ? ep.id`
     是 jsonb 包含查询（题目→考点的多对多在 jsonb 列上）；按已有题数升序、
     考点权重降序——新覆盖优先、重要考点次之。
@@ -107,7 +107,7 @@ def pick_points(state: QuizGenState) -> dict:
 
 
 def _generate_one_draft(point: dict, qtype: str) -> QuestionDraft:
-    """单考点出题（W1 并行 worker 内执行）：检索 → LLM → 草稿（失败则带 error）。"""
+    """单考点出题（并行 worker 内执行）：检索 → LLM → 草稿（失败则带 error）。"""
     # 出题检索不用 HyDE：考点标题本身即标准术语，多一次 LLM 无收益
     candidates = searcher.search(point["title"], hyde=False)[:3]
     if not candidates:
@@ -151,7 +151,7 @@ def _generate_one_draft(point: dict, qtype: str) -> QuestionDraft:
 
 
 def generate_drafts(state: QuizGenState) -> dict:
-    """逐考点生成草稿（W1：线程池并行，结果按考点原序组装）。
+    """逐考点生成草稿（线程池并行，结果按考点原序组装）。
 
     各考点相互独立（检索 + LLM 均 IO-bound）；题型按考点序号轮换
     single/judge/multi，在提交前按索引确定——并行下顺序与题型分配仍确定。
@@ -235,7 +235,7 @@ class DedupeGate:
 class QualityGate:
     """闸门3：小模型 rubric 打分（清晰/答案唯一/干扰项合理/依据充分）。
 
-    W2 起只打分不插库：打分通过的题交 AdversarialGate 攻击，
+    只打分不插库：打分通过的题交 AdversarialGate 攻击，
     幸存者才由 insert_question 入库（打分通过 ≠ 直接入库）。
     """
 
@@ -295,7 +295,7 @@ def insert_question(engine: Engine, d: QuestionDraft, cert_id: str) -> None:
 
 
 class AdversarialGate:
-    """闸门4（W2）：对抗评审——双 persona 攻击，攻不破的题才入库。
+    """闸门4：对抗评审——双 persona 攻击，攻不破的题才入库。
 
     与 rubric 打分的本质区别：打分问"这题几分"（评审员视角，同族高抬贵手），
     对抗问"这题哪里能被击破"（考生视角，胜利条件是找到具体缺陷）。

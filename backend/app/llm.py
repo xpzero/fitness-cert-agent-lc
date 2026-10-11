@@ -6,7 +6,7 @@
 重试由集成层 max_retries 承担；配额类 429/1113 翻译为明确错误快速失败。
 provider 由 settings.llm_provider 驱动（OpenAI 兼容协议厂商都用 "openai" +
 base_url）；gen 侧换厂商只改 .env（GEN_MODEL/GEN_BASE_URL/GEN_API_KEY，
-GEN_API_KEY 缺省沿用 LLM_API_KEY），无需动代码。
+GEN_API_KEY 缺省时沿用 LLM_API_KEY），无需动代码。
 
 调用方式：from app.llm import llm_client，然后 llm_client.chat_fast(...)。
 """
@@ -44,7 +44,7 @@ def _extra_kwargs(*, max_tokens: int | None, response_format_json: bool) -> dict
 
 def _require_key() -> None:
     if not settings.llm_api_key:
-        raise LLMError("LLM_API_KEY 未配置（检查 .env；兼容旧名 ZHIPU_API_KEY）")
+        raise LLMError("LLM_API_KEY 未配置（检查 .env）")
 
 
 def extract_json(raw: str) -> dict:

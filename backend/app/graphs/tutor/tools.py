@@ -1,6 +1,6 @@
 """导师 agent 的工具集：各能力子图的薄封装，user_id 闭包绑定。
 
-原生 @tool 定义：参数 schema 由类型注解自动生成（替代旧版 _arg 容错解析）。
+原生 @tool 定义：参数 schema 由类型注解自动生成（替代手写容错解析）。
 user_id 由 build_tutor_tools 闭包绑定——agent 不可指定他人，也无需在每步
 重复传。每个工具返回紧凑文本（进 transcript，800 字内）。
 """

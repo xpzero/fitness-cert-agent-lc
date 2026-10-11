@@ -11,7 +11,7 @@
 子图输出(final) → 父图 subgraph_output。已挂 qa / planning / quizgen / tutor；
 practice（刷题/模考）是两段式表单交互，无法由单条消息驱动，仍走「刷题」标签页。
 
-路由两级（W5）：
+路由两级：
 1. 规则快路径（P1 保留）：关键词命中直通子图——零成本零延迟；
 2. chat_fast LLM 路由：规则未命中时判 intent + confidence（with_structured_output
    结构化输出，验收 ≥0.92，eval/scripts/run_intent_eval.py）；tutor 或低置信的

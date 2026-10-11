@@ -170,7 +170,7 @@ def hitl_confirm(state: PlanningState) -> dict:
 
 def apply_plan_adjustment(user_id: str, weak_chapters: list[str],
                           action_text: str) -> dict | None:
-    """把调整追加进 active 计划（模考联动与学情诊断 agent 共用的内核，W3 抽出）。
+    """把调整追加进 active 计划（模考联动与学情诊断 agent 共用的内核）。
 
     按薄弱章节在最近阶段插入补练任务，并把调整记进 plan.adjustments 历史。
     返回调整说明；无 active 计划时返回 None。
@@ -207,7 +207,7 @@ def auto_adjust_from_mock(user_id: str, score: float,
     """跨子图联动（practice → planning）：模考后自动调整 active 计划。
 
     规则化调整（不调 LLM，秒级返回）：按薄弱章节生成行动文案并经
-    apply_plan_adjustment 写回；学情诊断 agent（W3）是其升级路径，
+    apply_plan_adjustment 写回；学情诊断 agent是其升级路径，
     本函数保留为 agent 失败时的降级路径。返回调整说明；无 active 计划返回 None。
     """
     weak_chapters = [w["chapter"] for w in weak_points] or []

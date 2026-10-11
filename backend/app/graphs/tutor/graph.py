@@ -1,4 +1,4 @@
-"""子图F：会话级导师 agent（W5）——原生 tool-calling 版。
+"""子图F：会话级导师 agent——原生 tool-calling 版。
 
 与 supervisor 静态路由的区别：supervisor 一句话只能分诊到一个科室；
 导师接诊后全程跟进——查学情（诊断环）→ 出题（quizgen）→ 调计划（planning），
@@ -23,7 +23,7 @@ from app.prompts.router import TUTOR_SYSTEM
 class TutorState(TypedDict, total=False):
     messages: list          # create_agent 状态（对话消息）
     user_id: str
-    steps: list             # 旧版兼容轨迹（steps_trace 消费）
+    steps: list             # 调查轨迹（steps_trace 消费）
     final_report: dict | None
 
 
