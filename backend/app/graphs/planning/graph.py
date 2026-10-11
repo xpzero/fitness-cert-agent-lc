@@ -1,4 +1,4 @@
-"""子图A：备考规划（背景采集→对比→路径→计划→HITL 确认，设计文档 §4.1）——P3 实现。
+"""子图A：备考规划（背景采集→对比→路径→计划→HITL 确认）。
 
 HITL 用 LangGraph 原生 interrupt/Command(resume)：generate_plan 后中断等用户确认，
 确认通过落库 active，或按反馈经 adjust_plan 重新生成并再次中断（循环直至满意）。
@@ -13,6 +13,7 @@ from datetime import date
 from typing import TypedDict
 
 from langgraph.graph import END, StateGraph
+from langgraph.types import interrupt
 from sqlalchemy import text as sql_text
 
 from app.llm import llm_client
@@ -156,8 +157,6 @@ def hitl_confirm(state: PlanningState) -> dict:
     interrupt 的载荷即前端确认页展示的草稿（计划+路径+证书对比）；
     resume 值约定为 {approve: bool, feedback: str}。
     """
-    from langgraph.types import interrupt
-
     decision = interrupt({"plan": state["plan"],
                           "recommended_path": state["recommended_path"],
                           "cert_comparison": state["cert_comparison"]})

@@ -55,12 +55,17 @@ _router_model = None
 
 
 def _get_router_model():
-    """结构化路由模型（fast 档，懒初始化单例，绑定 RouterDecision 输出）。"""
+    """结构化路由模型（fast 档，懒初始化单例，绑定 RouterDecision 输出）。
+
+    method="function_calling"：OpenAI 兼容端点的工具调用协议生成结构化输出
+    （json_schema 的 Structured Outputs API 兼容端未必支持）。
+    """
     global _router_model
     if _router_model is None:
         _router_model = make_model(
             settings.fast_model, settings.fast_base_url,
-            settings.llm_api_key).with_structured_output(RouterDecision)
+            settings.llm_api_key).with_structured_output(
+                RouterDecision, method="function_calling")
     return _router_model
 
 

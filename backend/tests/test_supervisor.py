@@ -15,8 +15,8 @@ from app.graphs.supervisor import (
     classify_intent,
     route,
 )
+from app.graphs.supervisor import router as supervisor_router
 from app.graphs.supervisor.adapters import _planning_adapter, _quizgen_adapter
-from app.llm import llm_client
 
 
 def main_state(text: str) -> dict:
@@ -35,6 +35,18 @@ class _StubGraph:
         return self.result
 
 
+class _FakeRouterModel:
+    """结构化路由模型的替身：按预设返回路由判定（普通对象，绕开 schema 校验）。"""
+
+    def __init__(self, intent: str = "qa", confidence: float = 0.9):
+        self.intent = intent
+        self.confidence = confidence
+        self.reason = "测试"
+
+    def invoke(self, messages, config=None, **kw):
+        return self
+
+
 class TestClassifyAndRoute(unittest.TestCase):
     def test_keywords(self):
         cases = {
@@ -47,9 +59,9 @@ class TestClassifyAndRoute(unittest.TestCase):
             self.assertEqual(classify_intent(main_state(text))["intent"], intent, text)
 
     def test_non_keyword_goes_llm_router(self):
-        # 无关键词命中 → LLM 路由（mock 成 qa，确定性断言；失败兜底见 routing 专测）
-        with mock.patch.object(llm_client, "chat_json",
-                               return_value={"intent": "qa", "confidence": 0.9}):
+        # 无关键词命中 → 结构化 LLM 路由（替身判 qa；失败兜底见 routing 专测）
+        with mock.patch.object(supervisor_router, "_get_router_model",
+                               return_value=_FakeRouterModel("qa", 0.9)):
             self.assertEqual(
                 classify_intent(main_state("卧推的目标肌群是什么"))["intent"], "qa")
 
@@ -153,8 +165,8 @@ class TestMainGraphComposition(unittest.TestCase):
                            "refused": False,
                            "cited_chunk_ids": [], "candidates": []})
         g = build_main_graph({"qa": stub})
-        with mock.patch.object(llm_client, "chat_json",
-                               return_value={"intent": "qa", "confidence": 0.9}):
+        with mock.patch.object(supervisor_router, "_get_router_model",
+                               return_value=_FakeRouterModel("qa", 0.9)):
             result = g.invoke(main_state("卧推的目标肌群是什么？"))
         self.assertIn("胸大肌", result["subgraph_output"]["final"])
         self.assertEqual(len(stub.calls), 1)
