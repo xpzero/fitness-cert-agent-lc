@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CaseImport } from "./components/CaseImport";
 
 type Run = { kind: string; metrics: Record<string, unknown>; passed: boolean; created_at: string };
 type KindInfo = { kind: string; cases: number; gate: { metric: string; min: number }; latest: Run | null };
@@ -104,6 +105,7 @@ export default function Eval() {
             <span className="text-[11px] text-muted-foreground">{casesOf.cases.length} 条</span>
             <Button variant="outline" className="ml-auto" onClick={() => setCasesOf(null)}>关闭</Button>
           </div>
+          <CaseImport kind={casesOf.kind} onDone={() => openCases(casesOf.kind)} />
           <div className="mt-2 max-h-80 overflow-y-auto rounded-lg bg-white">
             <pre className="p-3 font-mono text-[11px] leading-5">
               {casesOf.cases.map((c) => JSON.stringify(c)).join("\n")}

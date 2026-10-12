@@ -12,6 +12,23 @@ type Setting = {
   overridden: boolean;
 };
 
+/** key 前缀 -> 分区（模块域）。prompt.router → 路由模块。 */
+const SECTIONS: [string, string, string][] = [
+  ["router", "🧭 意图路由", "关键词快路径 / 复合信号 / LLM 路由提示词"],
+  ["diagnosis", "🔍 学情诊断", "调查策略与报告合成"],
+  ["tutor", "🎓 导师 agent", "会话级多工具编排"],
+  ["qa", "💬 溯源问答", "查询改写（RAG 入口）"],
+  ["quizgen", "✏️ 出题", "题目生成系统提示"],
+];
+
+function sectionOf(key: string) {
+  const name = key.replace(/^(prompt|router)\./, "");
+  for (const [prefix, label, desc] of SECTIONS) {
+    if (name.startsWith(prefix)) return [prefix, label, desc] as [string, string, string];
+  }
+  return ["misc", "⚙️ 其他", ""];
+}
+
 /** 编辑器：prompt 用 textarea，词表用 JSON textarea（保存时后端校验） */
 function Editor({ s, onSaved }: { s: Setting; onSaved: () => void }) {
   const isJson = s.category === "json";
@@ -70,18 +87,45 @@ function Editor({ s, onSaved }: { s: Setting; onSaved: () => void }) {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Setting[]>([]);
+  const [open, setOpen] = useState<string | null>(null);  // 展开的分区（默认全收起）
 
   const load = () => api<{ settings: Setting[] }>("/settings").then((d) => setSettings(d.settings)).catch(() => {});
   useEffect(() => { load(); }, []);
+
+  const bySection = new Map<string, { label: string; desc: string; items: Setting[] }>();
+  for (const s of settings) {
+    const [prefix, label, desc] = sectionOf(s.key);
+    if (!bySection.has(prefix)) bySection.set(prefix, { label, desc, items: [] });
+    bySection.get(prefix)!.items.push(s);
+  }
 
   return (
     <div>
       <div className="text-sm font-bold">设置 · 提示词与路由词表</div>
       <div className="text-xs text-muted-foreground">
-        覆盖值存数据库（app_settings）；删除覆盖即回退代码默认值。改坏有校验拦截，改完建议跑评测验证。
+        按模块分区，点击展开编辑。覆盖值存数据库（app_settings）；删除覆盖即回退代码默认值。
       </div>
-      <div className="mt-3 space-y-3">
-        {settings.map((s) => <Editor key={s.key} s={s} onSaved={load} />)}
+      <div className="mt-3 space-y-2">
+        {[...bySection.entries()].map(([prefix, sec]) => (
+          <div key={prefix} className="rounded-xl border border-border bg-card">
+            <button
+              className="flex w-full cursor-pointer items-center gap-2 px-3.5 py-2.5 text-left"
+              onClick={() => setOpen(open === prefix ? null : prefix)}
+            >
+              <span className="text-[13px] font-bold">{sec.label}</span>
+              <span className="text-[11px] text-muted-foreground">{sec.desc}</span>
+              {sec.items.some((s) => s.overridden) && (
+                <Badge variant="ok">{sec.items.filter((s) => s.overridden).length} 项已覆盖</Badge>
+              )}
+              <span className="ml-auto text-xs text-muted-foreground">{open === prefix ? "▾" : "▸"}</span>
+            </button>
+            {open === prefix && (
+              <div className="space-y-3 px-3.5 pb-3">
+                {sec.items.map((s) => <Editor key={s.key} s={s} onSaved={load} />)}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
