@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
-/* 专业驾驶舱主题：中性灰阶 + 品牌橙点缀（shadcn token） */
+/* 运动能量蓝主题：皇家蓝品牌色 + 浅灰画布（shadcn token） */
 :root {
   --background: #ffffff;
-  --foreground: #1e293b;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #1e293b;
-  --primary: #e8590c;
+  --card-foreground: #0f172a;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #fff4e6;
-  --secondary-foreground: #b45309;
-  --muted: #f4f6f8;
+  --secondary: #eff6ff;
+  --secondary-foreground: #1e40af;
+  --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  --accent: #fff9f2;
-  --accent-foreground: #b45309;
+  --accent: #f0f5ff;
+  --accent-foreground: #1e3a8a;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --success: #16a34a;
-  --border: #e5e7eb;
-  --input: #d8dee6;
-  --ring: #e8590c;
+  --border: #e2e8f0;
+  --input: #cbd5e1;
+  --ring: #2563eb;
   --radius: 0.625rem;
 }
 
@@ -47,12 +47,16 @@
 }
 
 body {
-  background: #eef0f3;
+  background: #f5f7fa;
   font-family: -apple-system, "PingFang SC", "Segoe UI", sans-serif;
   color: var(--foreground);
 }
 
-/* 驾驶舱细节：细滚动条 + 品牌色选区 */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+/* 细滚动条 + 品牌色选区 */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -67,5 +71,5 @@ body {
   background-color: #94a3b8;
 }
 ::selection {
-  background: #ffd9c2;
+  background: #dbeafe;
 }
