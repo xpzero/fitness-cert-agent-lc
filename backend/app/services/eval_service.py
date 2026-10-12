@@ -57,11 +57,11 @@ def init_eval_tables() -> None:
             )"""))
 
 
-def import_cases(kind: str) -> int:
+def import_cases(kind: str, filename: str | None = None) -> int:
     """从 jsonl 快照导入该类别用例（按 id 去重，已有不覆盖）。返回新增数。"""
     from app.config import PROJECT_ROOT
 
-    path = PROJECT_ROOT / "eval/golden" / _JSONL[kind]
+    path = PROJECT_ROOT / "eval/golden" / (filename or _JSONL[kind])
     added = 0
     with database.engine.begin() as conn:
         for line in path.read_text().splitlines():

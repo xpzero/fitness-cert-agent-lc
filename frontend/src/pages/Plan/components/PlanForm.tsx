@@ -11,6 +11,24 @@ export interface PlanProfile {
   weekly_hours: number;
   budget: number;
   exam_date: string;
+  cert_id: string;
+}
+
+const CERTS: [string, string][] = [
+  ["nsca_cpt", "NSCA-CPT（性价比/中文考试）"],
+  ["ace_cpt", "ACE-CPT（自学友好）"],
+  ["acsm_cpt", "ACSM-CPT（学术/康复衔接）"],
+  ["nasm_cpt", "NASM-CPT（健身俱乐部认可）"],
+];
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-[150px] flex-1">
+      <div className="mb-1 text-[11.5px] font-semibold text-secondary-foreground">{label}</div>
+      {children}
+      {hint && <div className="mt-0.5 text-[10.5px] text-muted-foreground">{hint}</div>}
+    </div>
+  );
 }
 
 /** 生成 / 调整计划表单 + LangGraph HITL 草稿确认 */
@@ -21,6 +39,7 @@ export function PlanForm({ draft, busy, onStart, onConfirm }: {
   onConfirm: (approve: boolean, feedback?: string) => void;
 }) {
   const [identity, setIdentity] = useState("在职教练");
+  const [cert, setCert] = useState("nsca_cpt");
   const [fb, setFb] = useState("");
 
   function start() {
@@ -28,6 +47,7 @@ export function PlanForm({ draft, busy, onStart, onConfirm }: {
       || new Date(Date.now() + 45 * 864e5).toISOString().slice(0, 10);
     onStart({
       identity,
+      cert_id: cert,
       city: (document.getElementById("pl-city") as HTMLInputElement).value || "杭州",
       weekly_hours: +(document.getElementById("pl-h") as HTMLInputElement).value || 10,
       budget: +(document.getElementById("pl-b") as HTMLInputElement).value || 5000,
@@ -39,17 +59,35 @@ export function PlanForm({ draft, busy, onStart, onConfirm }: {
     <>
       <div id="plan-form-anchor" className="mt-4 text-sm font-bold">生成 / 调整计划</div>
       <Card className="mt-2 border-[1.5px] border-dashed border-primary bg-accent p-4">
-        <div className="flex flex-wrap gap-2.5">
-          <Select value={identity} onValueChange={setIdentity}>
-            <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {["在职教练", "体育生", "退役运动员", "健身爱好者转行"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Input id="pl-city" className="flex-1" placeholder="目标城市" defaultValue="杭州" />
-          <Input id="pl-h" className="flex-1" type="number" defaultValue={10} min={3} max={40} title="每周小时" />
-          <Input id="pl-b" className="flex-1" type="number" defaultValue={5000} min={500} step={500} title="预算" />
-          <Input id="pl-date" className="flex-[1.2]" type="date" defaultValue={new Date(Date.now() + 45 * 864e5).toISOString().slice(0, 10)} />
+        <div className="flex flex-wrap gap-3">
+          <Field label="备考证书" hint="影响章节排期与题库">
+            <Select value={cert} onValueChange={setCert}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CERTS.map(([v, t]) => <SelectItem key={v} value={v}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="当前身份">
+            <Select value={identity} onValueChange={setIdentity}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["在职教练", "体育生", "退役运动员", "健身爱好者转行"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="考试城市" hint="考位/报名渠道参考">
+            <Input id="pl-city" placeholder="如：杭州" defaultValue="杭州" />
+          </Field>
+          <Field label="每周可学时长（小时）" hint="3-40">
+            <Input id="pl-h" type="number" defaultValue={10} min={3} max={40} />
+          </Field>
+          <Field label="预算（元）" hint="影响证书推荐：低于 2000 元推荐省钱组合">
+            <Input id="pl-b" type="number" defaultValue={5000} min={500} step={500} />
+          </Field>
+          <Field label="考试日期" hint="决定计划周数">
+            <Input id="pl-date" type="date" defaultValue={new Date(Date.now() + 45 * 864e5).toISOString().slice(0, 10)} />
+          </Field>
         </div>
         <Button className="mt-2.5" onClick={start} disabled={busy}>{busy ? "⏳ 生成中（10-25 秒）…" : "生成计划"}</Button>
         <div className="mt-1.5 text-[11px] text-muted-foreground">LangGraph HITL：确认前可无限轮调整；跨重启可恢复草稿</div>

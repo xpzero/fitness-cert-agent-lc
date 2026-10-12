@@ -111,10 +111,12 @@ def generate_plan(state: PlanningState) -> dict:
     章节清单取四大证通用理论考点（id LIKE 'T%'）的去重章节——
     计划按章排期而非按证书，四大证备考内容高度重合。
     """
+    cert_id = state["profile"].get("cert_id") or "nsca_cpt"
     with get_engine().connect() as conn:
         chapters = [r[0] for r in conn.execute(sql_text(
-            "SELECT DISTINCT chapter FROM exam_points WHERE cert_id = ANY(ARRAY['nsca_cpt','ace_cpt','acsm_cpt','nasm_cpt']) "
-            "AND id LIKE 'T%' ORDER BY chapter")).all()]
+            "SELECT DISTINCT chapter FROM exam_points WHERE cert_id = :c "
+            "AND id LIKE 'T%' ORDER BY chapter"),
+            {"c": cert_id}).all()]
     weeks = state["profile"].get("weeks", 8)
     identity = state["profile"].get("identity", "在职")
     hours = state["profile"].get("weekly_hours", 10)
@@ -122,7 +124,7 @@ def generate_plan(state: PlanningState) -> dict:
         plan = llm_client.chat_json([
             {"role": "system", "content": PLAN_SYSTEM},
             {"role": "user",
-             "content": f"考生：{identity}，每周 {hours} 小时，共 {weeks} 周。"
+             "content": f"考生备考证书：{cert_id}。考生：{identity}，每周 {hours} 小时，共 {weeks} 周。"
                         f"章节：{'、'.join(chapters)}。"
                         f"已有反馈：{state.get('human_feedback') or '无'}"},
         ], model_tier="gen", max_tokens=1200)
@@ -231,7 +233,7 @@ def save_plan(state: PlanningState) -> dict:
             INSERT INTO study_plans (id, user_id, cert_id, exam_date, plan, status)
             VALUES (:id, :u, :c, :e, CAST(:p AS jsonb), 'active')
         """), {"id": "plan-" + state["user_id"][:8] + date.today().isoformat(),
-               "u": state["user_id"], "c": state["plan"].get("primary", "nsca_cpt"),
+               "u": state["user_id"], "c": state["profile"].get("cert_id") or "nsca_cpt",
                "e": str(state["profile"].get("exam_date")),
                "p": json.dumps(state["plan"], ensure_ascii=False)})
     return {"message": "计划已保存（active）"}
