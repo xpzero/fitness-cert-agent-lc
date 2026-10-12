@@ -38,7 +38,7 @@ export function PlanForm({ draft, busy, onStart, onConfirm }: {
   return (
     <>
       <div id="plan-form-anchor" className="mt-4 text-sm font-bold">生成 / 调整计划</div>
-      <Card className="mt-2 border-[1.5px] border-dashed border-primary bg-[#FFFBF7] p-4">
+      <Card className="mt-2 border-[1.5px] border-dashed border-primary bg-accent p-4">
         <div className="flex flex-wrap gap-2.5">
           <Select value={identity} onValueChange={setIdentity}>
             <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>

@@ -5,7 +5,7 @@ function MetricCard({ value, label, sub }: { value: ReactNode; label: string; su
     <div className="flex-1 rounded-xl border border-border bg-accent px-4 py-3">
       <div className="text-2xl font-bold text-primary">{value}</div>
       <div className="mt-0.5 text-xs text-secondary-foreground">{label}</div>
-      {sub && <div className="text-[11px] text-orange-800">{sub}</div>}
+      {sub && <div className="text-[11px] text-muted-foreground">{sub}</div>}
     </div>
   );
 }

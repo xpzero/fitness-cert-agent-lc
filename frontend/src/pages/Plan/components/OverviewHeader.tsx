@@ -29,12 +29,12 @@ export function OverviewHeader({ ov }: { ov: Overview }) {
         <div className="flex-1 rounded-xl border border-border bg-accent px-4 py-3">
           <div className="text-[22px] font-bold text-primary">{ov.coverage!.covered}/{ov.coverage!.total}</div>
           <div className="mt-0.5 text-xs text-secondary-foreground">考点已覆盖</div>
-          <div className="text-[11px] text-orange-800">题目覆盖 {ov.coverage!.pct}%</div>
+          <div className="text-[11px] text-muted-foreground">题目覆盖 {ov.coverage!.pct}%</div>
         </div>
         <div className="flex-1 rounded-xl border border-border bg-accent px-4 py-3">
           <div className="text-[22px] font-bold text-primary">{ov.answered}</div>
           <div className="mt-0.5 text-xs text-secondary-foreground">累计刷题</div>
-          <div className="text-[11px] text-orange-800">连续 {ov.streak} 天 🔥</div>
+          <div className="text-[11px] text-muted-foreground">连续 {ov.streak} 天 🔥</div>
         </div>
         <div className="flex-1 rounded-xl border border-border bg-accent px-4 py-3">
           <div className="text-[22px] font-bold text-primary">

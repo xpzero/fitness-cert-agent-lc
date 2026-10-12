@@ -10,9 +10,9 @@ export function ResultDash({ r, onWrong }: { r: QuizResult; onWrong: () => void 
   return (
     <div className="mt-3 flex gap-4 rounded-xl border border-input bg-white p-4">
       <div className="flex h-[120px] w-[120px] items-center justify-center rounded-full"
-        style={{ background: `conic-gradient(${ok ? "#E8590C" : "#DC2626"} 0 ${r.report.score}%, #FDE8D8 ${r.report.score}% 100%)` }}>
+        style={{ background: `conic-gradient(${ok ? "#2563eb" : "#DC2626"} 0 ${r.report.score}%, #dbeafe ${r.report.score}% 100%)` }}>
         <div className="flex h-[88px] w-[88px] flex-col items-center justify-center rounded-full bg-white">
-          <b className="text-[22px]" style={{ color: ok ? "#E8590C" : "#DC2626" }}>{r.report.score}</b>
+          <b className="text-[22px]" style={{ color: ok ? "#2563eb" : "#DC2626" }}>{r.report.score}</b>
           <span className="text-[11px] text-muted-foreground">得分 / 100</span>
         </div>
       </div>

@@ -21,9 +21,9 @@ async def kb_upload(files: list[UploadFile], authority: int = Form(3)):
 
 
 @router.get("/kb/documents")
-def kb_documents(page: int = 1, page_size: int = 10) -> dict:
-    """文档列表（分页，默认 10 个/页，按标题排序）。"""
-    return kb.documents_overview(page=page, page_size=page_size)
+def kb_documents(page: int = 1, page_size: int = 10, q: str = "") -> dict:
+    """文档列表（分页，默认 10 个/页，按标题排序；q 过滤标题/文件名）。"""
+    return kb.documents_overview(page=page, page_size=page_size, q=q)
 
 
 @router.delete("/kb/documents/{doc_id}")

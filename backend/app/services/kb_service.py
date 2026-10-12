@@ -71,14 +71,17 @@ class KbService:
                             "document_id": doc_id, "status": "queued"})
         return results
 
-    def documents_overview(self, page: int = 1, page_size: int = 10) -> dict:
+    def documents_overview(self, page: int = 1, page_size: int = 10,
+                           q: str = "") -> dict:
         """文档列表（按标题排序分页，含状态与最新任务进度，供前端 3s 轮询）。
 
-        同时返回库级汇总（总数/已索引/chunks/解析中）：指标卡与轮询开关
-        不再依赖当前页数据——分页后列表只是全库的一个切片。
+        q 非空时按标题/文件名 ILIKE 过滤。同时返回库级汇总（总数/已索引/
+        chunks/解析中）：指标卡与轮询开关不依赖当前页数据——分页后列表只是
+        全库的一个切片。
         """
         page = max(1, page)
         page_size = max(1, min(100, page_size))
+        like = f"%{q.strip()}%" if q.strip() else None
         with database.engine.connect() as conn:
             rows = conn.execute(sql_text("""
                 SELECT * FROM (
@@ -88,10 +91,17 @@ class KbService:
                            COALESCE(min(NULLIF(c.page_no, 0)), 0) AS min_page,
                            max(c.page_no) AS max_page
                     FROM documents d LEFT JOIN chunks c ON c.document_id = d.id
+                    WHERE (:like IS NULL OR d.title ILIKE :like
+                           OR d.filename ILIKE :like)
                     GROUP BY d.id ORDER BY d.title
                 ) t
                 LIMIT :limit OFFSET :offset
-            """), {"limit": page_size, "offset": (page - 1) * page_size}).mappings().all()
+            """), {"limit": page_size, "offset": (page - 1) * page_size,
+                   "like": like}).mappings().all()
+            filtered_total = conn.execute(sql_text("""
+                SELECT count(*) FROM documents
+                WHERE (:like IS NULL OR title ILIKE :like OR filename ILIKE :like)
+            """), {"like": like}).scalar()
             total, indexed, active = conn.execute(sql_text("""
                 SELECT count(*),
                        count(*) FILTER (WHERE status = 'indexed'),
@@ -108,7 +118,8 @@ class KbService:
             docs.append(d)
         return {"documents": docs,
                 "lib_recall": latest_lib_recall_display(),
-                "total": total, "indexed": indexed, "total_chunks": total_chunks,
+                "total": filtered_total, "library_total": total,
+                "indexed": indexed, "total_chunks": total_chunks,
                 "active": active, "page": page, "page_size": page_size}
 
     def delete_document(self, doc_id: str, force_delete: bool = False) -> dict:

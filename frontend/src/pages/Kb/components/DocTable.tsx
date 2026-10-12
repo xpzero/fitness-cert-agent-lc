@@ -40,7 +40,6 @@ export function DocTable({ docs, page, pageSize, total, onPage, openChunks, onTo
   const pages = Math.max(1, Math.ceil(total / pageSize));
   return (
     <div>
-      <div className="mt-4 text-sm font-bold">文档列表</div>
       <div className="text-xs text-muted-foreground">状态自动刷新（3s 轮询）· 删除前检查题目引用 · 点击文件名展开 chunk</div>
       <div className="mt-1 rounded-xl border border-border bg-accent p-2.5">
         <table className="w-full text-[13px]">

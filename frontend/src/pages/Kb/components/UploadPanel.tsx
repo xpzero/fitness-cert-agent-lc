@@ -27,7 +27,7 @@ export function UploadPanel({ onUploaded }: { onUploaded: () => void }) {
     <div>
       <div className="mt-4 text-sm font-bold">上传文档</div>
       <div className="mt-2 flex gap-3.5">
-        <label className="flex-1 cursor-pointer rounded-xl border-[2px] border-dashed border-[#FFC299] bg-[#FFFBF7] p-5 text-center">
+        <label className="flex-1 cursor-pointer rounded-xl border-[2px] border-dashed border-input bg-accent p-5 text-center">
           <div className="text-[15px] font-semibold text-secondary-foreground">⬆️ 拖拽文件到此处，或点击选择（支持多选）</div>
           <div className="mt-1 text-[11.5px] text-muted-foreground">.md / .txt 直接解析 · .pdf 自动识别扫描件走 Vision OCR（≤500MB）</div>
           <input ref={fileRef} type="file" multiple accept=".md,.txt,.pdf" className="mt-2 text-xs" />
@@ -36,7 +36,7 @@ export function UploadPanel({ onUploaded }: { onUploaded: () => void }) {
           <div className="mb-1.5 text-muted-foreground">权威级（影响检索加权）</div>
           {AUTHORITY_OPTIONS.map(([v, t]) => (
             <label key={v} className="block cursor-pointer py-[3px]">
-              <input type="radio" name="kb-auth" className="mr-1.5 accent-[#E8590C]" checked={auth === v} onChange={() => setAuth(v)} /> {t}
+              <input type="radio" name="kb-auth" className="mr-1.5 accent-primary" checked={auth === v} onChange={() => setAuth(v)} /> {t}
             </label>
           ))}
           <Button className="mt-2 w-full" onClick={upload}>上传并解析</Button>
