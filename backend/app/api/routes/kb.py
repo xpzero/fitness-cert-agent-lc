@@ -1,7 +1,8 @@
 """知识库管理端点：上传/列表/删除/重解析/评测/检索试驾/chunk 浏览。"""
 from __future__ import annotations
 
-from fastapi import APIRouter, Form, UploadFile
+from fastapi import APIRouter, Form, HTTPException, UploadFile
+from sqlalchemy import text as sql_text
 
 from app.services.kb_service import kb
 from app.services.repositories import repo
@@ -55,3 +56,17 @@ def kb_search(q: str, mode: str = "hybrid", hyde: bool = False) -> dict:
 @router.get("/kb/documents/{doc_id}/chunks")
 def kb_chunks(doc_id: str, limit: int = 40) -> dict:
     return {"chunks": repo.document_chunks(doc_id, limit)}
+
+
+@router.get("/kb/chunk/{chunk_id}")
+def kb_chunk(chunk_id: str) -> dict:
+    """单 chunk 全文（对话引用展开用）：{chunk: {id, title, page_no, section_path, content}}"""
+    with repo.engine.connect() as conn:
+        row = conn.execute(sql_text("""
+            SELECT c.id, c.page_no, c.section_path, c.content::text, d.title
+            FROM chunks c JOIN documents d ON d.id = c.document_id
+            WHERE c.id = :c
+        """), {"c": chunk_id}).mappings().first()
+    if not row:
+        raise HTTPException(status_code=404, detail=f"chunk 不存在：{chunk_id}")
+    return {"chunk": dict(row)}
