@@ -32,7 +32,7 @@ export function QuizToolbar({ q, total, idx, answered, count, setCount, onStart,
           </SelectContent>
         </Select>
       )}
-      <Button onClick={onStart}>开始</Button>
+      {showCountSelect && <Button onClick={onStart}>开始</Button>}
     </div>
   );
 }

@@ -45,15 +45,29 @@ export default function Eval() {
     setRunning((o) => ({ ...o, [kind]: { run_id, progress: 0 } }));
   }
 
+  async function runAll() {
+    for (const k of kinds) {
+      if (KIND_META[k.kind]?.needLLM === false) await run(k.kind);  // 无 LLM 依赖的并行安全，直接全发
+    }
+    for (const k of kinds) {
+      if (KIND_META[k.kind]?.needLLM) await run(k.kind);            // LLM 类串行发（后台本来就是单线程池）
+    }
+  }
+
   function openCases(kind: string) {
     api<{ cases: unknown[] }>(`/eval/${kind}/cases`).then((d) => setCasesOf({ kind, cases: d.cases }));
   }
 
   return (
     <div>
-      <div className="text-sm font-bold">评测中心</div>
+      <div className="flex items-center gap-2">
+        <div className="text-sm font-bold">评测中心</div>
+        <Button className="ml-auto" disabled={Object.keys(running).length > 0} onClick={runAll}>
+          ▶ 一键运行全部
+        </Button>
+      </div>
       <div className="text-xs text-muted-foreground">
-        门槛即 CI 门槛；用例存数据库（eval_cases），可增删改。检索/意图可即时跑，引用与对抗需 LLM（分钟级）。
+        门槛即 CI 门槛；用例存数据库（eval_cases），可增删改。检索/意图可即时跑，引用与对抗需 LLM（分钟级，自动串行）。
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3.5">
         {kinds.map((k) => {

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
 
 /* 运动能量蓝主题：皇家蓝品牌色 + 浅灰画布（shadcn token） */
 :root {

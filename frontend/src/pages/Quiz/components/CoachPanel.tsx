@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { Markdown } from "@/components/Markdown";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import type { CoachMessage, Question } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 const PHASE_LABEL: Record<string, string> = {
   probe: "诊断误解", hint: "逐步提示", explain: "完整讲解", verify: "变式检验", done: "完成",
@@ -105,9 +106,9 @@ export function CoachPanel({ userId, questionId }: { userId: string; questionId:
         {msgs.map((m, i) => (
           <div key={i} className={cn("text-[13px]", m.role === "user" ? "text-right" : "")}>
             <span className={cn(
-              "inline-block max-w-[85%] whitespace-pre-wrap rounded-lg px-2.5 py-1.5 text-left",
-              m.role === "user" ? "bg-secondary" : "bg-amber-100")}>
-              {m.content}
+              "inline-block max-w-[85%] rounded-lg px-2.5 py-1.5 text-left",
+              m.role === "user" ? "whitespace-pre-wrap bg-secondary" : "bg-amber-100")}>
+              {m.role === "user" ? m.content : <Markdown text={m.content} />}
             </span>
           </div>
         ))}

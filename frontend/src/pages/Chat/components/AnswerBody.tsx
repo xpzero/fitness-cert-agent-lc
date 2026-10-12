@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ChatMsg, Src } from "@/lib/types";
 import { CitationChip, CitationSheet } from "./CitationChip";
+import { Markdown } from "@/components/Markdown";
 
 /** 助手回答渲染：引用标记替换为可交互角标（hover 预览/点击抽屉），附来源列表 */
 export function AnswerBody({ m }: { m: ChatMsg }) {
@@ -26,7 +27,7 @@ export function AnswerBody({ m }: { m: ChatMsg }) {
       <div>
         {parts.map((p, k) => p.src
           ? <CitationChip key={k} index={p.src.i} src={p.src.s} onOpen={setOpenSrc} />
-          : <span key={k} className="whitespace-pre-wrap">{p.text.replace(/\[(?:chunk:)?doc-[\w…·]+\]/g, "")}</span>)}
+          : <Markdown key={k} text={p.text.replace(/\[(?:chunk:)?doc-[\w…·]+\]/g, "")} />)}
       </div>
       {!!srcList.length && (
         <>
