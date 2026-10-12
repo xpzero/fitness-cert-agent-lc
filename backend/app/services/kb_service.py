@@ -91,7 +91,7 @@ class KbService:
                            COALESCE(min(NULLIF(c.page_no, 0)), 0) AS min_page,
                            max(c.page_no) AS max_page
                     FROM documents d LEFT JOIN chunks c ON c.document_id = d.id
-                    WHERE (:like IS NULL OR d.title ILIKE :like
+                    WHERE (CAST(:like AS text) IS NULL OR d.title ILIKE :like
                            OR d.filename ILIKE :like)
                     GROUP BY d.id ORDER BY d.title
                 ) t
@@ -100,7 +100,7 @@ class KbService:
                    "like": like}).mappings().all()
             filtered_total = conn.execute(sql_text("""
                 SELECT count(*) FROM documents
-                WHERE (:like IS NULL OR title ILIKE :like OR filename ILIKE :like)
+                WHERE (CAST(:like AS text) IS NULL OR title ILIKE :like OR filename ILIKE :like)
             """), {"like": like}).scalar()
             total, indexed, active = conn.execute(sql_text("""
                 SELECT count(*),

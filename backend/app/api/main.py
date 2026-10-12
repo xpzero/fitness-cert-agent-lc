@@ -30,7 +30,11 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="fitness-cert-agent", version="0.3.0", lifespan=lifespan)
 
 # ------------------------------------------------------------- 路由装配
-from app.api.routes import chat, kb, plan, quiz  # noqa: E402
+from app.api.routes import chat  # noqa: E402
+from app.api.routes import eval as eval_routes  # noqa: E402
+from app.api.routes import kb, plan, quiz  # noqa: E402
+from app.api.routes import settings as settings_routes  # noqa: E402
 
-for _router in (chat.router, plan.router, quiz.router, kb.router):
+for _router in (chat.router, plan.router, quiz.router, kb.router,
+                settings_routes.router, eval_routes.router):
     app.include_router(_router)

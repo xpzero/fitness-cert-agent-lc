@@ -207,7 +207,7 @@ def _eval_retrieval(run_id: str) -> tuple[dict, dict]:
     for i, c in enumerate(cases):
         _tasks[run_id]["progress"] = int(i / max(1, len(cases)) * 100)
         top5 = [r.chunk_id for r in searcher.search(c["query"], top_k=5)]
-        expect = set(c.get("expect_chunk_ids") or c.get("expect") or [])
+        expect = set(c.get("relevant_chunk_ids") or c.get("expect_chunk_ids") or [])
         if expect & set(top5):
             hits += 1
         else:
@@ -230,7 +230,7 @@ def _eval_citation(run_id: str) -> tuple[dict, dict]:
         state = g.invoke({"query": c["query"], "rewrite_rounds": 0,
                           "candidates": [], "cited_chunk_ids": [],
                           "draft_answer": "", "final_answer": ""})  # type: ignore[arg-type]  # type: ignore[arg-type]
-        expect = set(c.get("expect_chunk_ids") or [])
+        expect = set(c.get("relevant_chunk_ids") or c.get("expect_chunk_ids") or [])
         cited = set(state.get("cited_chunk_ids") or [])
         if expect & cited:
             hits += 1
