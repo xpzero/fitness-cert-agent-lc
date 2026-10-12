@@ -26,7 +26,7 @@ export function QuizToolbar({ q, total, idx, answered, count, setCount, onStart 
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {["5", "10", "15", "20"].map((n) => <SelectItem key={n} value={n}>{n} 题</SelectItem>)}
+          {["10", "20", "50"].map((n) => <SelectItem key={n} value={n}>{n} 题</SelectItem>)}
         </SelectContent>
       </Select>
       <Button onClick={onStart}>开始</Button>

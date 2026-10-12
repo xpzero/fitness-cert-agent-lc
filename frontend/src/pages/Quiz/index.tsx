@@ -15,7 +15,7 @@ const FLAGGED = new Set<string>();  // 标疑（本地会话级，demo 对齐）
 
 export default function Quiz() {
   const [mode, setMode] = useState("practice");
-  const [count, setCount] = useState("5");
+  const [count, setCount] = useState("10");
   const [badges, setBadges] = useState({ wrong: 0, favorites: 0 });
   const [qs, setQs] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
