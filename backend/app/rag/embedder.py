@@ -14,7 +14,7 @@ from app.config import settings
 
 
 class Embedder:
-    """本地 ONNX 向量化（批量）。"""
+    """本地 ONNX 向量化（批量）。e5 类模型自动加 query/passage 前缀。"""
 
     @cached_property
     def _local(self):
@@ -22,14 +22,30 @@ class Embedder:
 
         return TextEmbedding(model_name=settings.embed_model)
 
+    @cached_property
+    def _needs_prefix(self) -> bool:
+        return "e5" in settings.embed_model.lower()
+
+    def embed_queries(self, texts: list[str]) -> list[list[float]]:
+        """查询侧向量化（e5 加 query: 前缀）。"""
+        if self._needs_prefix:
+            texts = [f"query: {t}" for t in texts]
+        return self.embed(texts)
+
+    def embed_passages(self, texts: list[str]) -> list[list[float]]:
+        """文档侧向量化（e5 加 passage: 前缀；摄取/重嵌入用）。"""
+        if self._needs_prefix:
+            texts = [f"passage: {t}" for t in texts]
+        return self.embed(texts)
+
     def embed(self, texts: list[str]) -> list[list[float]]:
-        """批量向量化。"""
+        """批量向量化（无前缀原样）。"""
         if not texts:
             return []
         return [list(map(float, v)) for v in self._local.embed(texts)]
 
     def embed_one(self, text: str) -> list[float]:
-        return self.embed([text])[0]
+        return self.embed_queries([text])[0]
 
 
 embedder = Embedder()  # 进程级单例（local 模型懒加载）
