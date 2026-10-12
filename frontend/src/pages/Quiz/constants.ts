@@ -5,3 +5,10 @@ export const MODES = [
   { label: "收藏夹", value: "favorites" },
   { label: "全真模考", value: "mock" },
 ];
+
+/** 题型中文名（后端 type 值：single/judge/multi） */
+export const TYPE_LABEL: Record<string, string> = {
+  single: "单选题",
+  judge: "判断题",
+  multi: "多选题",
+};

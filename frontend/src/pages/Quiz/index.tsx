@@ -9,6 +9,7 @@ import { QuizToolbar } from "./components/QuizToolbar";
 import { ResultDash } from "./components/ResultDash";
 import { SheetNav } from "./components/SheetNav";
 import { CoachPanel } from "./components/CoachPanel";
+import { QuestionBrowser } from "./components/QuestionBrowser";
 
 const FLAGGED = new Set<string>();  // 标疑（本地会话级，demo 对齐）
 
@@ -23,6 +24,7 @@ export default function Quiz() {
   const [emptyMsg, setEmptyMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [favSet, setFavSet] = useState<Set<string>>(new Set());
+  const [browsing, setBrowsing] = useState(false);  // 题库浏览视图开关
 
   const loadBadges = () => api("/quiz/badges?user_id=" + USER_ID).then(setBadges).catch(() => {});
   useEffect(() => { loadBadges(); start(); }, []);  // 进页即选题（默认 practice 模式）
@@ -81,7 +83,18 @@ export default function Quiz() {
           {emptyMsg}（切「章节练习」开始）
         </div>
       )}
-      <QuizToolbar q={q} total={qs.length} idx={idx} answered={answered} count={count} setCount={setCount} onStart={() => start()} />
+      {browsing ? (
+        <QuestionBrowser onPractice={() => setBrowsing(false)} />
+      ) : (
+        <>
+          <QuizToolbar q={q} total={qs.length} idx={idx} answered={answered} count={count} setCount={setCount} onStart={() => start()} />
+          <div className="mt-1 text-right">
+            <button className="cursor-pointer text-[11px] text-primary underline-offset-2 hover:underline" onClick={() => setBrowsing(true)}>
+              浏览全部题目 →
+            </button>
+          </div>
+        </>
+      )}
 
       {result && <ResultDash r={result} onWrong={() => { setMode("wrong_review"); start(); }} />}
 

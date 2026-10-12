@@ -15,6 +15,10 @@ from sqlalchemy import text as sql_text
 
 from app.llm import llm_client
 from app.db import get_engine
+
+# 四大证笔试规格（题量，均为四选一单选；2026-10 核实的公开考试信息）
+MOCK_SPECS = {"nsca_cpt": 155, "ace_cpt": 150, "acsm_cpt": 150, "nasm_cpt": 120}
+MOCK_MAX = 160  # 抽题上限（防误配超大规格)
 from app.prompts.practice import EXPLAIN_SYSTEM
 from app.services.repositories import repo
 from app.tools.grader import grade, resolve_answer_key
@@ -69,6 +73,16 @@ def start_questions(user_id: str, mode: str, cert_id: str = "",
                 WHERE f.user_id = :u AND q.verified
                 ORDER BY f.created_at DESC LIMIT 20
             """), {"u": user_id}).mappings().all()
+    elif mode == "mock":
+        # 全真模考：按证书规格抽题——四大证笔试均为四选一单选，数量取考试规格；
+        # 题库不足时按可用题量等比缩放出示意卷
+        spec_n = MOCK_SPECS.get(cert_id, 0) or count
+        with engine.connect() as conn:
+            rows = conn.execute(sql_text("""
+                SELECT id, type, stem, options::text AS options FROM questions
+                WHERE cert_id = :c AND verified AND type = 'single'
+                ORDER BY random() LIMIT :n
+            """), {"c": cert_id, "n": min(spec_n, MOCK_MAX)}).mappings().all()
     else:
         with engine.connect() as conn:
             rows = conn.execute(sql_text("""

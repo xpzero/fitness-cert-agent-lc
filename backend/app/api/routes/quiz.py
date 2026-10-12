@@ -194,6 +194,42 @@ def quiz_badges(user_id: str = "web") -> dict:
     return stats.badge_counts(user_id)
 
 
+@router.get("/quiz/browse")
+def quiz_browse(chapter: str = "", page: int = 1, page_size: int = 20) -> dict:
+    """题库浏览（章节练习全量列出）：按章节过滤分页，只含 verified 题。"""
+    from app.db import get_engine
+    from sqlalchemy import text as sql_text
+
+    page = max(1, page)
+    page_size = max(1, min(100, page_size))
+    like = f"%{chapter.strip()}%" if chapter.strip() else None
+    base_where = ("q.verified AND (CAST(:like AS text) IS NULL OR ep.chapter ILIKE :like)")
+    with get_engine().connect() as conn:
+        rows = conn.execute(sql_text(f"""
+            SELECT q.id, q.type, q.stem, q.options::text AS options,
+                   ep.chapter, ep.title AS point_title
+            FROM questions q
+            JOIN exam_points ep ON ep.id = ANY(
+                ARRAY(SELECT jsonb_array_elements_text(q.exam_point_ids)))
+            WHERE {base_where}
+            ORDER BY ep.chapter, q.id
+            LIMIT :n OFFSET :o
+        """), {"like": like, "n": page_size, "o": (page - 1) * page_size}).mappings().all()
+        total = conn.execute(sql_text(f"""
+            SELECT count(DISTINCT q.id)
+            FROM questions q
+            JOIN exam_points ep ON ep.id = ANY(
+                ARRAY(SELECT jsonb_array_elements_text(q.exam_point_ids)))
+            WHERE {base_where}
+        """), {"like": like}).scalar()
+    import json as _json
+
+    return {"questions": [
+        {**{k: r[k] for k in ("id", "type", "stem", "chapter", "point_title")},
+         "options": _json.loads(r["options"] or "{}")} for r in rows],
+        "total": total, "page": page, "page_size": page_size}
+
+
 @router.get("/coverage/{cert_id}")
 def coverage(cert_id: str) -> dict:
     return stats.coverage_summary(cert_id)
