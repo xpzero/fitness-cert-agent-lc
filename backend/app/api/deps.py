@@ -43,13 +43,3 @@ def sse(obj: dict) -> str:
     return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
 
 
-def trace_chat(user_id: str, message: str, thread_id: str, output: str) -> None:
-    try:
-        from langfuse import Langfuse
-
-        lf = Langfuse()
-        lf.trace(id=thread_id, session_id=user_id, name="chat",
-                 input=message, output=output)
-        lf.flush()
-    except Exception:  # noqa: BLE001 — 观测失败不影响主链路
-        pass

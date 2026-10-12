@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 from langgraph.graph import END
 from sqlalchemy import text as sql_text
 
-from app.api.deps import get_main_graph, sse, trace_chat
+from app.api.deps import get_main_graph, sse
 from app.api.schemas import ChatRequest
 from app.db import database
 from app.prompts.qa import REFUSAL_TEXT_PREFIX
@@ -89,7 +89,6 @@ async def chat(req: ChatRequest):
             # 流式后 format_answer 的引用重排：发增量修正事件（前端整体替换）
             yield sse({"event": "final_replace", "text": final_text})
         yield sse({"event": "done", "text": final_text, "sources": sources})
-        trace_chat(req.user_id, req.message, thread_id, final_text)
         _persist(req.user_id, session_id, req.message, final_text, sources)
 
     return StreamingResponse(sse_event_stream(), media_type="text/event-stream")
