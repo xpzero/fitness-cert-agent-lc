@@ -24,7 +24,14 @@ function StatusCell({ d }: { d: Doc }) {
   );
 }
 
-/** 文档列表：状态/进度、chunk 展开、评测/重解析/删除操作（分页，pageSize 个/页） */
+function fmtSize(n?: number): string {
+  if (!n) return "—";
+  if (n >= 1e9) return `${(n / 1e9).toFixed(1)} GB`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)} MB`;
+  return `${(n / 1e3).toFixed(0)} KB`;
+}
+
+/** 文档列表：状态/进度、大小、chunk 展开、评测/重解析/删除操作（分页，pageSize 个/页） */
 export function DocTable({ docs, page, pageSize, total, onPage, openChunks, onToggleChunks, onEval, onReingest, onDelete }: {
   docs: Doc[];
   page: number;
@@ -48,6 +55,7 @@ export function DocTable({ docs, page, pageSize, total, onPage, openChunks, onTo
               <th className="px-2.5 py-2.5 font-medium">文件</th>
               <th className="w-[150px] px-2 py-2.5 font-medium">状态 / 进度</th>
               <th className="w-[64px] px-2 py-2.5 font-medium">Chunks</th>
+              <th className="w-[72px] px-2 py-2.5 font-medium">大小</th>
               <th className="w-[64px] px-2 py-2.5 font-medium">权威级</th>
               <th className="w-[84px] px-2 py-2.5 font-medium">页码</th>
               <th className="w-[92px] px-2 py-2.5 font-medium">创建时间</th>
@@ -66,6 +74,7 @@ export function DocTable({ docs, page, pageSize, total, onPage, openChunks, onTo
                   </td>
                   <td className="px-2 py-3"><StatusCell d={d} /></td>
                   <td className="whitespace-nowrap px-2 py-3">{d.chunks || "—"}</td>
+                  <td className="whitespace-nowrap px-2 py-3 text-[11.5px] text-muted-foreground">{fmtSize(d.file_size)}</td>
                   <td className="px-2 py-3">
                     <span className={cn("whitespace-nowrap rounded-md px-2 py-0.5 text-[11.5px]",
                       { 1: "bg-orange-100 text-orange-700", 2: "bg-yellow-100 text-yellow-700", 3: "bg-sky-100 text-sky-700" }[d.authority_level])}>
@@ -89,7 +98,7 @@ export function DocTable({ docs, page, pageSize, total, onPage, openChunks, onTo
                 </tr>
                 {openChunks[d.id] && (
                   <tr>
-                    <td colSpan={8} className="bg-muted/60 px-3 py-2.5">
+                    <td colSpan={9} className="bg-muted/60 px-3 py-2.5">
                       {openChunks[d.id].map((c) => (
                         <div key={c.id} className="mb-1.5 rounded-lg border border-border border-l-4 border-l-primary bg-white px-3 py-2 text-xs">
                           <b className="font-mono text-[11px] text-secondary-foreground">…{c.id.slice(-12)}</b> ｜ P{c.page_no}

@@ -23,6 +23,7 @@ from datetime import date, datetime
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     Date,
     DateTime,
@@ -85,6 +86,7 @@ class Document(Base):
     # M1：生命周期（老库行默认 indexed，兼容既有语料）
     status: Mapped[str] = mapped_column(String(16), default="indexed")  # queued|parsing|embedding|indexed|failed
     filename: Mapped[str] = mapped_column(String(256), default="")
+    file_size: Mapped[int] = mapped_column(BigInteger, default=0)  # 字节
     error: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

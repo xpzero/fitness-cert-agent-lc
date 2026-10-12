@@ -19,6 +19,7 @@ export type QuizResult = {
 
 // ---- 知识库 ----
 export type Doc = {
+  file_size?: number;
   id: string; title: string; authority_level: number; status: string; filename: string;
   error: string; chunks: number; min_page: number; max_page: number;
   created_at?: string; updated_at?: string;

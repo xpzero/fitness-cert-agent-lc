@@ -61,11 +61,13 @@ class KbService:
             with database.engine.begin() as conn:
                 conn.execute(sql_text("""
                     INSERT INTO documents (id, title, source_type, cert_ids, authority_level,
-                                           status, filename)
-                    VALUES (:id, :t, '上传', CAST(:certs AS jsonb), :a, 'queued', :f)
-                    ON CONFLICT (id) DO UPDATE SET status = 'queued', filename = :f
+                                           status, filename, file_size)
+                    VALUES (:id, :t, '上传', CAST(:certs AS jsonb), :a, 'queued', :f, :sz)
+                    ON CONFLICT (id) DO UPDATE SET status = 'queued', filename = :f,
+                                                   file_size = :sz
                 """), {"id": doc_id, "t": title, "a": max(1, min(3, authority)),
-                       "certs": json.dumps([settings.default_cert]), "f": original_name})
+                       "certs": json.dumps([settings.default_cert]), "f": original_name,
+                       "sz": f.size})
             ingest_worker.enqueue(doc_id)
             results.append({"filename": f.filename, "ok": True,
                             "document_id": doc_id, "status": "queued"})
@@ -84,7 +86,7 @@ class KbService:
         with database.engine.connect() as conn:
             rows = conn.execute(sql_text("""
                 SELECT * FROM (
-                    SELECT d.id, d.title, d.authority_level, d.status, d.filename, d.error,
+                    SELECT d.id, d.title, d.authority_level, d.status, d.filename, d.error, d.file_size,
                            d.created_at, d.updated_at,
                            count(c.id) AS chunks,
                            COALESCE(min(NULLIF(c.page_no, 0)), 0) AS min_page,

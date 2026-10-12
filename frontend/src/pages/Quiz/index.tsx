@@ -87,7 +87,7 @@ export default function Quiz() {
         <QuestionBrowser onPractice={() => setBrowsing(false)} />
       ) : (
         <>
-          <QuizToolbar q={q} total={qs.length} idx={idx} answered={answered} count={count} setCount={setCount} onStart={() => start()} />
+          <QuizToolbar q={q} total={qs.length} idx={idx} answered={answered} count={count} setCount={setCount} onStart={() => start()} showCountSelect={mode === "practice"} />
           <div className="mt-1 text-right">
             <button className="cursor-pointer text-[11px] text-primary underline-offset-2 hover:underline" onClick={() => setBrowsing(true)}>
               浏览全部题目 →

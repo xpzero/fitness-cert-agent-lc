@@ -49,6 +49,8 @@ class Database:
                 "ALTER TABLE documents ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now()"))
             conn.execute(text(
                 "ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now()"))
+            conn.execute(text(
+                "ALTER TABLE documents ADD COLUMN IF NOT EXISTS file_size BIGINT DEFAULT 0"))
         with engine.begin() as conn:
             # 检索索引（与 tables.Chunk.__table_args__ 同名同定义；覆盖历史库路径）
             conn.execute(text(
