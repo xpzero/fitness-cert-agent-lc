@@ -5,7 +5,7 @@ import type { Question } from "@/lib/types";
 import { TYPE_LABEL } from "../constants";
 
 /** 答题进度条 + 每轮题数选择 + 开始按钮 */
-export function QuizToolbar({ q, total, idx, answered, count, setCount, onStart, showCountSelect }: {
+export function QuizToolbar({ q, total, idx, answered, count, setCount, onStart, showCountSelect, onBrowse }: {
   q: Question | undefined;
   total: number;
   idx: number;
@@ -14,6 +14,7 @@ export function QuizToolbar({ q, total, idx, answered, count, setCount, onStart,
   setCount: (v: string) => void;
   onStart: () => void;
   showCountSelect?: boolean;
+  onBrowse?: () => void;
 }) {
   return (
     <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-accent px-3.5 py-2.5">
@@ -31,6 +32,11 @@ export function QuizToolbar({ q, total, idx, answered, count, setCount, onStart,
             {["10", "20", "50"].map((n) => <SelectItem key={n} value={n}>{n} 题</SelectItem>)}
           </SelectContent>
         </Select>
+      )}
+      {onBrowse && (
+        <button className="cursor-pointer whitespace-nowrap text-[11px] text-primary underline-offset-2 hover:underline" onClick={onBrowse}>
+          浏览全部题目 →
+        </button>
       )}
       {showCountSelect && <Button onClick={onStart}>开始</Button>}
     </div>

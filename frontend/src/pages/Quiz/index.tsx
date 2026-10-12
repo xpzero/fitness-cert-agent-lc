@@ -87,19 +87,14 @@ export default function Quiz() {
         <QuestionBrowser onPractice={() => setBrowsing(false)} />
       ) : (
         <>
-          <QuizToolbar q={q} total={qs.length} idx={idx} answered={answered} count={count} setCount={setCount} onStart={() => start()} showCountSelect={mode === "practice"} />
-          <div className="mt-1 text-right">
-            <button className="cursor-pointer text-[11px] text-primary underline-offset-2 hover:underline" onClick={() => setBrowsing(true)}>
-              浏览全部题目 →
-            </button>
-          </div>
+          <QuizToolbar q={q} total={qs.length} idx={idx} answered={answered} count={count} setCount={setCount} onStart={() => start()} showCountSelect={mode === "practice"} onBrowse={() => setBrowsing(true)} />
         </>
       )}
 
       {result && <ResultDash r={result} onWrong={() => { setMode("wrong_review"); start(); }} />}
 
       {q && (
-        <div className="mt-3 flex items-start gap-3.5">
+        <div className="mt-3.5 flex items-start gap-3.5">
           <div className="min-w-0 flex-1">
             <QuestionCard
               q={q} sel={sel} corr={corr} rr={rr} explain={explain}

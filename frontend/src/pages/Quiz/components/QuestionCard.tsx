@@ -21,7 +21,7 @@ function SourceBlock({ qid }: { qid: string }) {
   }, [open, qid, sources]);
 
   return (
-    <div className="mt-2.5">
+    <div>
       <button onClick={() => setOpen(!open)}
         className="cursor-pointer text-[12px] font-semibold text-primary hover:underline">
         {open ? "▾" : "▸"} 📖 查看教材依据（含表格原文）
