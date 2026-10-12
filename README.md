@@ -4,6 +4,18 @@
 
 LangGraph 多子图 + 溯源 RAG，面向健身教练国际四大认证备考（NSCA-CPT / ACE / ACSM / NASM 并列，规划页自选主考证书；引擎证书无关，cert_id 参数化）。
 
+## 技术栈
+
+- **Agent**：LangGraph · LangChain
+- **后端**：FastAPI · PostgreSQL/pgvector · SQLAlchemy
+- **模型**：智谱 GLM-4.6 / GLM-4-flash（OpenAI 兼容协议，可换厂商）
+- **Embedding**：BAAI/bge-small-zh（fastembed 本地 ONNX）
+- **Reranker**：BAAI/bge-reranker-v2-m3-int8（cross-encoder 精排）
+- **前端**：React + TypeScript · Tailwind CSS + shadcn/ui
+- **可观测**：Langfuse（自托管，全链路 trace）
+- **OCR**：macOS Vision（扫描 PDF 逐页识别）+ PyMuPDF
+- **工程**：GitHub Actions CI（单测 + 评测门槛）· Docker Compose · uv / pnpm
+
 ## 快速开始
 
 ```bash
