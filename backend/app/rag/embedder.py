@@ -1,10 +1,8 @@
 """Embedding 后端：fastembed ONNX 本地推理（免 API key）。
 
-基线 BAAI/bge-small-zh-v1.5（512 维，EMBED_DIM 驱动，换模型改 env 即可）。
-模型懒加载（cached_property）——import 本模块不触发模型下载。
-
-历史：原方案 BGE-M3(1024d) 本地跑需 torch/2.3GB 下载且 fastembed 0.8 不支持；
-zhipu API 后端因 coding-plan key 无 embedding 配额已移除（2026-10-10）。
+当前基线 intfloat/multilingual-e5-large（1024 维多语言，中英互检；EMBED_MODEL/EMBED_DIM
+改 env 可换）。e5 系列要求输入带 "query:"/"passage:" 前缀——由本模块按模型自动添加，
+调用方无感。模型懒加载（cached_property）——import 本模块不触发模型下载。
 """
 from __future__ import annotations
 

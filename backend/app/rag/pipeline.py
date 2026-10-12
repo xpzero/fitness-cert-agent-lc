@@ -156,7 +156,7 @@ class IngestPipeline:
         vectors: list[list[float]] = []
         batch_size = max(1, settings.embed_batch_size * 4)   # 上传场景批大一点
         for i in range(0, len(chunks), batch_size):
-            vectors.extend(embedder.embed(
+            vectors.extend(embedder.embed_passages(
                 [c.content for c in chunks[i:i + batch_size]]))
             if progress_cb:
                 progress_cb("embed", int((len(vectors) / len(chunks)) * 90) + 5,
