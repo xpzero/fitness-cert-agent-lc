@@ -53,10 +53,14 @@ def _vars_of(template: str) -> set[str]:
 # ---------------------------------------------------------------- API
 
 def seed_defaults() -> int:
-    """建表 + 补齐缺失的默认行。返回补齐数。"""
+    """建表 + 首次初始化默认行（仅在表为空时全量插入——reset 删除行后
+    不再自动补回，避免覆盖状态被 seed 污染）。返回插入数。"""
     from app.db import init_db
 
     init_db()
+    with database.engine.connect() as conn:
+        if conn.execute(sql_text("SELECT count(*) FROM app_settings")).scalar():
+            return 0
     added = 0
     with database.engine.begin() as conn:
         for key, spec in _SETTINGS.items():

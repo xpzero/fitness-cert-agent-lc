@@ -10,7 +10,6 @@ router = APIRouter()
 
 @router.get("/settings")
 def list_settings() -> dict:
-    ss.seed_defaults()  # 幂等：补齐新注册的默认项
     return {"settings": ss.list_settings()}
 
 
