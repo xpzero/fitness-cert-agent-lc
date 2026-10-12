@@ -21,6 +21,9 @@ export async function sseChat(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ user_id: userId, message, session_id: sessionId }),
   });
+  if (!resp.ok || !resp.body) {
+    throw new Error(`服务不可用（HTTP ${resp.status}）——请刷新页面后重试`);
+  }
   const reader = resp.body!.getReader();
   const dec = new TextDecoder();
   let buf = "";

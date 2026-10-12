@@ -79,6 +79,18 @@ export default function Chat() {
     setTrail([]);
   }
 
+  async function deleteSession(id: string) {
+    await api(`/chat/sessions?user_id=${USER_ID}&session_id=${encodeURIComponent(id)}`,
+             { method: "DELETE" }).catch(() => {});
+    if (id === sessionId) {  // 删的是当前会话 → 开新的
+      const nid = newSessionId();
+      setSessionId(nid);
+      localStorage.setItem(LS_KEY, nid);
+      setMsgs([]);
+    }
+    refreshSessions();
+  }
+
   // 挂载：拉会话列表；恢复上次活跃会话（刷新/重启不丢）
   useEffect(() => {
     (async () => {
@@ -107,6 +119,7 @@ export default function Chat() {
     setMsgs((m) => [...m, { role: "user", content: q }, { role: "assistant", content: "" }]);
     setBusy(true);
     setTrail([]);
+    scroll();  // 用户消息即滚底，不等首个 token
     const path: string[] = [];
     let final = "", sources: Src[] = [];
     await sseChat(q, (evt) => {
@@ -149,10 +162,17 @@ export default function Chat() {
               还没有历史对话
               <br />
               答案带教材出处 · 不可溯源即拒答
+              <br />（右键会话可删除）
             </div>
           )}
           {sessions.map((s) => (
-            <button key={s.session_id} onClick={() => openSession(s.session_id)} disabled={busy}
+            <div key={s.session_id} className="group relative"
+                 onContextMenu={(e) => {
+                   e.preventDefault();
+                   const ok = confirm(`删除会话「${s.title || "未命名"}」？(${s.n} 条消息)`);
+                   if (ok) deleteSession(s.session_id);
+                 }}>
+            <button onClick={() => openSession(s.session_id)} disabled={busy}
               className={cn(
                 "block w-full rounded-lg px-2.5 py-2 text-left text-[12.5px] transition-colors",
                 s.session_id === sessionId
@@ -166,6 +186,7 @@ export default function Chat() {
                 })}
               </div>
             </button>
+            </div>
           ))}
         </div>
       </div>

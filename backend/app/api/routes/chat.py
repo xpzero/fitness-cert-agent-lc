@@ -132,6 +132,16 @@ def chat_sessions(user_id: str = "dev") -> dict:
     return {"sessions": [dict(r) for r in rows]}
 
 
+@router.delete("/chat/sessions")
+def chat_delete_session(user_id: str, session_id: str) -> dict:
+    """删除会话（连同消息）。当前活跃会话被删时前端应开新会话。"""
+    with database.engine.begin() as conn:
+        n = conn.execute(sql_text(
+            "DELETE FROM chat_messages WHERE user_id = :u AND session_id = :s"),
+            {"u": user_id, "s": session_id}).rowcount
+    return {"deleted": n, "session_id": session_id}
+
+
 @router.get("/chat/messages")
 def chat_history(user_id: str, session_id: str) -> dict:
     """取回一个会话的全部消息（刷新恢复）。"""
