@@ -16,29 +16,11 @@ from app.graphs.native import make_model
 from app.graphs.supervisor.adapters import REGISTERED
 from app.graphs.supervisor.state import MainState
 from app.prompts.router import ROUTER_PROMPT
+from app.routing_tables import COMPOSITE_SIGNALS, KEYWORD_ROUTES
+from app.services.settings_service import get_overrides
 
 LLM_ROUTABLE = ("qa", "quizgen", "planning", "practice", "tutor", "smalltalk")
 
-# 复合请求嫌疑信号：命中任一则绕过关键词快路径交给 LLM 整句判断——
-# 否则"看看我的薄弱点然后出题练"会被"出题"关键词劫持到 quizgen
-COMPOSITE_SIGNALS = (
-    "我的",
-    "看看我",
-    "然后",
-    "怎么办",
-    "怎么复习",
-    "薄弱",
-    "错题本",
-    "分析一下",
-    "评估一下",
-)
-
-# 规则快路径：intent -> 触发关键词（dict 保序，命中顺序即优先级）
-KEYWORD_ROUTES: dict[str, tuple[str, ...]] = {
-    "planning": ("报名", "怎么选", "证书对比", "学习计划", "报考"),
-    "quizgen": ("出题", "出一道", "模拟卷", "考我"),
-    "practice": ("刷题", "答题", "错题", "模考", "模拟考", "练习"),
-}
 RULE_CONFIDENCE = 0.7
 
 
@@ -69,8 +51,21 @@ def _get_router_model():
     return _router_model
 
 
+def _effective_tables() -> tuple[dict, tuple]:
+    """路由词表：DB 覆盖层优先，无覆盖走代码默认。覆盖损坏时静默回退。"""
+    try:
+        ov = get_overrides()
+        kw = ov.get("router.keywords") or KEYWORD_ROUTES
+        sig = tuple(ov.get("router.composite_signals")
+                    or COMPOSITE_SIGNALS)
+    except Exception:  # noqa: BLE001 — 设置层故障不阻断路由
+        kw, sig = KEYWORD_ROUTES, COMPOSITE_SIGNALS
+    return kw, sig
+
+
 def _keyword_intent(text: str) -> str | None:
-    for intent, keywords in KEYWORD_ROUTES.items():
+    keywords_table, _ = _effective_tables()
+    for intent, keywords in keywords_table.items():
         if any(k in text for k in keywords):
             return intent
     return None
@@ -81,7 +76,8 @@ def classify_intent(state: MainState) -> dict:
     text = str(state["messages"][-1]["content"]) if state["messages"] else ""
     if not text.strip():
         return {"intent": "smalltalk", "intent_confidence": 0.9}
-    composite = any(s in text for s in COMPOSITE_SIGNALS)
+    _, composite_signals = _effective_tables()
+    composite = any(s in text for s in composite_signals)
     if not composite and (intent := _keyword_intent(text)):
         return {"intent": intent, "intent_confidence": RULE_CONFIDENCE}
     try:
