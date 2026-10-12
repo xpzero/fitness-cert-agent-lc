@@ -2,8 +2,7 @@
 
 [![ci](https://github.com/xpzero/fitness-cert-agent-lc/actions/workflows/ci.yml/badge.svg)](https://github.com/xpzero/fitness-cert-agent-lc/actions/workflows/ci.yml)
 
-LangGraph 多子图 + 溯源 RAG，面向健身教练国际四大认证（**NSCA-CPT 主攻**，ACE/ACSM/NASM 备选）。
-引擎证书无关（cert_id 参数化）。
+LangGraph 多子图 + 溯源 RAG，面向健身教练国际四大认证备考（NSCA-CPT / ACE / ACSM / NASM 并列，规划页自选主考证书；引擎证书无关，cert_id 参数化）。
 
 ## 快速开始
 
