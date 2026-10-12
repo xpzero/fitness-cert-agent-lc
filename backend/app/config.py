@@ -65,6 +65,13 @@ class Settings:
     # 词面阈值分级回退：短口语查询与长文档的 word_similarity 普遍偏低，
     # 固定阈值会整级空手而归（前端表现为"点了没反应"）
     sparse_min_sim_ladder: tuple = (0.5, 0.35, 0.2)
+    # 精排（cross-encoder）：开关 / 模型 / 粗召回窗口 / 精排后取数
+    rerank_enabled: bool = field(default_factory=lambda: os.environ.get(
+        "RERANK_ENABLED", "1") not in ("0", "false", "False"))
+    rerank_model: str = field(default_factory=lambda: os.environ.get(
+        "RERANK_MODEL", "BAAI/bge-reranker-v2-m3-int8"))
+    rerank_pool: int = field(default_factory=lambda: int(
+        os.environ.get("RERANK_POOL", "30")))
 
     # 质量闸门（出题/引用）
     # 出题证据句与原文的最低相似度（防幻觉闸门，grounding）

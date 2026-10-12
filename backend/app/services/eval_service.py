@@ -53,8 +53,11 @@ def init_eval_tables() -> None:
                 metrics JSONB NOT NULL,
                 passed BOOLEAN NOT NULL,
                 detail JSONB,
+                progress INT NOT NULL DEFAULT 0,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT now()
             )"""))
+        conn.execute(sql_text(
+            "ALTER TABLE eval_runs ADD COLUMN IF NOT EXISTS progress INT NOT NULL DEFAULT 0"))
 
 
 def import_cases(kind: str, filename: str | None = None) -> int:
@@ -115,12 +118,29 @@ def run_eval(kind: str) -> str:
         import_cases(kind)
     run_id = f"run-{uuid.uuid4().hex[:10]}"
     _tasks[run_id] = {"kind": kind, "phase": "running", "progress": 0}
+    with database.engine.begin() as conn:  # 运行中即落库（重启后可查）
+        conn.execute(sql_text(
+            "INSERT INTO eval_runs (id, kind, metrics, passed, progress) "
+            "VALUES (:i, :k, '{}'::jsonb, false, 0)"),
+            {"i": run_id, "k": kind})
     _pool.submit(_execute, run_id, kind)
     return run_id
 
 
 def get_task(run_id: str) -> dict | None:
-    return _tasks.get(run_id)
+    if run_id in _tasks:
+        return _tasks[run_id]
+    # 进程重启后：从库恢复状态；未完成的标记为中断（不再运行）
+    row = database.engine.connect().execute(sql_text(
+        "SELECT kind, progress, passed, metrics::text FROM eval_runs "
+        "WHERE id = :i"), {"i": run_id}).first()
+    if not row:
+        return None
+    if row[1] >= 100:
+        return {"kind": row[0], "phase": "done", "progress": 100,
+                "metrics": json.loads(row[3])}
+    return {"kind": row[0], "phase": "interrupted", "progress": row[1],
+            "error": "服务重启导致评测中断，请重新运行"}
 
 
 def latest_runs() -> list[dict]:
@@ -139,13 +159,23 @@ def run_history(kind: str, limit: int = 20) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def _persist_progress(run_id: str, progress: int) -> None:
+    try:
+        with database.engine.begin() as conn:
+            conn.execute(sql_text(
+                "UPDATE eval_runs SET progress = :p WHERE id = :i"),
+                {"p": progress, "i": run_id})
+    except Exception:  # noqa: BLE001 — 进度写失败不影响评测本身
+        pass
+
+
 def _finish(run_id: str, kind: str, metrics: dict, passed: bool,
             detail: dict | None) -> None:
     with database.engine.begin() as conn:
         conn.execute(sql_text(
-            "INSERT INTO eval_runs (id, kind, metrics, passed, detail) "
-            "VALUES (:i, :k, CAST(:m AS jsonb), :p, CAST(:d AS jsonb))"),
-            {"i": run_id, "k": kind, "p": passed,
+            "UPDATE eval_runs SET metrics = CAST(:m AS jsonb), passed = :p, "
+            "detail = CAST(:d AS jsonb), progress = 100 WHERE id = :i"),
+            {"i": run_id, "p": passed,
              "m": json.dumps(metrics, ensure_ascii=False),
              "d": json.dumps(detail or {}, ensure_ascii=False)})
     _tasks[run_id].update(phase="done", progress=100)
@@ -170,6 +200,14 @@ def _execute(run_id: str, kind: str) -> None:
         _finish(run_id, kind, metrics, passed, detail)
     except Exception as e:  # noqa: BLE001
         _tasks[run_id].update(phase="failed", error=str(e)[:300])
+        try:
+            with database.engine.begin() as conn:
+                conn.execute(sql_text(
+                    "UPDATE eval_runs SET detail = CAST(:d AS jsonb) "
+                    "WHERE id = :i"),
+                    {"i": run_id, "d": json.dumps({"error": str(e)[:300]})})
+        except Exception:  # noqa: BLE001
+            pass
 
 
 # 各类别实现（薄封装既有脚本/图逻辑，读 DB 用例而非文件）
@@ -181,7 +219,12 @@ def _eval_intent(run_id: str) -> tuple[dict, dict]:
     correct = 0
     misses = []
     for i, c in enumerate(cases):
-        _tasks[run_id]["progress"] = int(i / max(1, len(cases)) * 100)
+        pct = int(i / max(1, len(cases)) * 100)
+        _tasks[run_id]["progress"] = pct
+        if pct % 10 == 0:
+            _persist_progress(run_id, pct)
+        if pct % 10 == 0:
+            _persist_progress(run_id, pct)
         state = {"messages": [{"role": "user", "content": c["text"]}],
                  "user_id": "eval", "intent": "", "intent_confidence": 0.0,
                  "reply": {}}
@@ -205,7 +248,12 @@ def _eval_retrieval(run_id: str) -> tuple[dict, dict]:
     hits = 0
     misses = []
     for i, c in enumerate(cases):
-        _tasks[run_id]["progress"] = int(i / max(1, len(cases)) * 100)
+        pct = int(i / max(1, len(cases)) * 100)
+        _tasks[run_id]["progress"] = pct
+        if pct % 10 == 0:
+            _persist_progress(run_id, pct)
+        if pct % 10 == 0:
+            _persist_progress(run_id, pct)
         top5 = [r.chunk_id for r in searcher.search(c["query"], top_k=5)]
         expect = set(c.get("relevant_chunk_ids") or c.get("expect_chunk_ids") or [])
         if expect & set(top5):
@@ -226,7 +274,12 @@ def _eval_citation(run_id: str) -> tuple[dict, dict]:
     hits = 0
     misses = []
     for i, c in enumerate(cases):
-        _tasks[run_id]["progress"] = int(i / max(1, len(cases)) * 100)
+        pct = int(i / max(1, len(cases)) * 100)
+        _tasks[run_id]["progress"] = pct
+        if pct % 10 == 0:
+            _persist_progress(run_id, pct)
+        if pct % 10 == 0:
+            _persist_progress(run_id, pct)
         state = g.invoke({"query": c["query"], "rewrite_rounds": 0,
                           "candidates": [], "cited_chunk_ids": [],
                           "draft_answer": "", "final_answer": ""})  # type: ignore[arg-type]  # type: ignore[arg-type]

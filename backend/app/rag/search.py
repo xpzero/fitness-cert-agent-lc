@@ -150,7 +150,7 @@ class HybridSearcher:
         merged = rrf_merge(
             [r[0] for r in dense_rows],
             [r[0] for r in sparse_rows],
-            top_k=top_k,
+            top_k=max(top_k, settings.rerank_pool) if settings.rerank_enabled else top_k,
             authority=authority_by_id,
         )
         score_map = dict(merged)
@@ -166,7 +166,17 @@ class HybridSearcher:
                       dense_rank=dense_rank.get(cid), sparse_rank=sparse_rank.get(cid))
             for cid, _ in merged if cid in rows_by_chunk_id
         ]
-        return candidates
+        # 精排：粗排池 rerank_pool 内 cross-encoder 重打分取 top_k
+        # （rerank 关闭/失败时恒等直出，链路不中断）
+        if settings.rerank_enabled and len(candidates) > top_k:
+            from app.rag.reranker import reranker
+
+            pool = candidates[:settings.rerank_pool]
+            scores = reranker.rerank(query, [c.content for c in pool])
+            if scores:
+                ranked = sorted(zip(pool, scores), key=lambda x: -x[1])
+                return [c for c, _ in ranked[:top_k]]
+        return candidates[:top_k]
 
 
 searcher = HybridSearcher()  # 进程级单例（engine 懒取）
