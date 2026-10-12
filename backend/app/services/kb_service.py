@@ -72,12 +72,11 @@ class KbService:
         return results
 
     def documents_overview(self, page: int = 1, page_size: int = 10,
-                           q: str = "") -> dict:
+                           q: str = "", authority: int = 0, status: str = "") -> dict:
         """文档列表（按标题排序分页，含状态与最新任务进度，供前端 3s 轮询）。
 
-        q 非空时按标题/文件名 ILIKE 过滤。同时返回库级汇总（总数/已索引/
-        chunks/解析中）：指标卡与轮询开关不依赖当前页数据——分页后列表只是
-        全库的一个切片。
+        q 按标题/文件名 ILIKE 过滤；authority>0 按权威级；status 按文档状态。
+        同时返回库级汇总（总数/已索引/chunks/解析中）。
         """
         page = max(1, page)
         page_size = max(1, min(100, page_size))
@@ -93,15 +92,19 @@ class KbService:
                     FROM documents d LEFT JOIN chunks c ON c.document_id = d.id
                     WHERE (CAST(:like AS text) IS NULL OR d.title ILIKE :like
                            OR d.filename ILIKE :like)
+                    AND (:auth = 0 OR d.authority_level = :auth)
+                    AND (CAST(:st AS text) = '' OR d.status = :st)
                     GROUP BY d.id ORDER BY d.title
                 ) t
                 LIMIT :limit OFFSET :offset
             """), {"limit": page_size, "offset": (page - 1) * page_size,
-                   "like": like}).mappings().all()
+                   "like": like, "auth": authority, "st": status}).mappings().all()
             filtered_total = conn.execute(sql_text("""
                 SELECT count(*) FROM documents
                 WHERE (CAST(:like AS text) IS NULL OR title ILIKE :like OR filename ILIKE :like)
-            """), {"like": like}).scalar()
+                  AND (:auth = 0 OR authority_level = :auth)
+                  AND (CAST(:st AS text) = '' OR status = :st)
+            """), {"like": like, "auth": authority, "st": status}).scalar()
             total, indexed, active = conn.execute(sql_text("""
                 SELECT count(*),
                        count(*) FILTER (WHERE status = 'indexed'),

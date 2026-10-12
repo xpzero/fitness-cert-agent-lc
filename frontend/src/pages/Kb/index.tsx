@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ChunkRow, Doc, EvalRes } from "@/lib/types";
 import { DocTable } from "./components/DocTable";
 import { EvalPanel } from "./components/EvalPanel";
@@ -22,6 +23,8 @@ type Overview = {
 export default function Kb() {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
+  const [auth, setAuth] = useState("0");
+  const [status, setStatus] = useState("");
   const [docs, setDocs] = useState<Doc[]>([]);
   const [meta, setMeta] = useState({ total: 0, library_total: 0, indexed: 0, total_chunks: 0, active: 0 });
   const [libRecall, setLibRecall] = useState("—");
@@ -29,8 +32,8 @@ export default function Kb() {
   const [openChunks, setOpenChunks] = useState<Record<string, ChunkRow[]>>({});
   const [evalPanel, setEvalPanel] = useState<EvalRes | "loading" | null>(null);
 
-  const load = (p = page, q = query) =>
-    api<Overview>(`/kb/documents?page=${p}&page_size=${PAGE_SIZE}&q=${encodeURIComponent(q)}`).then((d) => {
+  const load = (p = page, q = query, a = auth, st = status) =>
+    api<Overview>(`/kb/documents?page=${p}&page_size=${PAGE_SIZE}&q=${encodeURIComponent(q)}&authority=${a}&status=${st}`).then((d) => {
       setDocs(d.documents);
       setMeta({ total: d.total, library_total: d.library_total ?? d.total, indexed: d.indexed, total_chunks: d.total_chunks, active: d.active });
       setLibRecall(d.lib_recall || "—");
@@ -47,6 +50,10 @@ export default function Kb() {
     const t = setTimeout(() => { if (page !== 1) setPage(1); else load(1, query); }, 400);
     return () => clearTimeout(t);
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 筛选变化即刷新（回第一页）
+  useEffect(() => {
+    if (page !== 1) setPage(1); else load(1, query, auth, status);
+  }, [auth, status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     api<{ covered_total: number; uncovered: string[] }>("/coverage/nsca_cpt")
@@ -116,11 +123,31 @@ export default function Kb() {
         )}
         {query && <span className="text-[11px] text-muted-foreground">筛选 “{query}”：{meta.total} / {meta.library_total}</span>}
         <input
-          className="ml-auto w-56 rounded-lg border border-input bg-white px-3 py-1.5 text-[13px] outline-none focus:border-primary"
+          className="ml-auto w-52 rounded-lg border border-input bg-white px-3 py-1.5 text-[13px] outline-none focus:border-primary"
           placeholder="搜索标题 / 文件名…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <Select value={auth} onValueChange={setAuth}>
+          <SelectTrigger className="w-[104px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">全部权威级</SelectItem>
+            <SelectItem value="1">官方</SelectItem>
+            <SelectItem value="2">半官方</SelectItem>
+            <SelectItem value="3">补充</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={status || "all"} onValueChange={(v) => setStatus(v === "all" ? "" : v)}>
+          <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部状态</SelectItem>
+            <SelectItem value="indexed">已索引</SelectItem>
+            <SelectItem value="queued">排队中</SelectItem>
+            <SelectItem value="parsing">解析中</SelectItem>
+            <SelectItem value="embedding">向量化中</SelectItem>
+            <SelectItem value="failed">解析失败</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <DocTable
