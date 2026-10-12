@@ -113,7 +113,7 @@ class IngestPipeline:
                              authority_level=authority_level,
                              max_chars=settings.chunk_max_chars,
                              overlap=settings.chunk_overlap_chars)
-        chunks, dropped = _drop_junk_chunks(chunks)
+        chunks, dropped = self._drop_junk_chunks(chunks)
         if dropped:
             progress_cb and progress_cb("embed", 1, f"过滤 {dropped} 个水印/乱码块")
         if not chunks:
