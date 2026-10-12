@@ -98,6 +98,6 @@ docker-compose.yml # PostgreSQL(pgvector) + Langfuse
 
 ## 改进待办
 
-- **模考题型仿真**：四大证笔试均为四选一单选（NSCA 140+15 / NASM 120 / ACSM 150 / ACE ~150，2026-10 上网核实）。对话内「模拟卷」路径已 single-only（quizgen 图 `question_type` 定向）；剩余：`/quiz/start` 模考抽题仍会抽到历史 `judge/multi` 题，待题库轮换或抽题侧过滤。`judge/multi` 保留给练习场景（题型轮换见 `graphs/quizgen/graph.py` generate_drafts）。
+- **题库扩容**：当前 verified 题量（15）远小于四大证模考规格（NSCA 155 等）——文档入库后自动铺题（覆盖驱动）在持续补库，题量上来后模考卷自然达到规格。
 - **考点大纲校准**：`knowledge/syllabus/nsca_cpt.yaml` 仍为 draft 初稿（按公开考试领域手工整理、权重为估计值）；NASM 全套教材已入库，应按教材目录（TOC）校准考点树与权重——exam_points 是覆盖分析（pick_points）的地基。
 - **本地检索金标准重建**（2026-10-11 评测课悬案，未拍板）：本地语料已 64,405 块/约 150 文档（权威1 占 73%），而 `rag_qa_auto.jsonl` 32 条仍全部指向种子笔记（权威3、48 块）——实测 Recall@5=0.312 vs CI 恒绿（CI 语料仅种子 1 文档）。miss 分类显示一半未命中并非检索之过（等价换出处/期望块跑题/auto 配对脱节）。候选方案：A 本地全语料重建金标准+双口径文档化（推荐）/ C 仅文档化 / D 分层金标准；B 检索域过滤已被否（复活简化手术删除的设计）。对比工具：`eval/scripts/_tmp_miss_compare.py`。
