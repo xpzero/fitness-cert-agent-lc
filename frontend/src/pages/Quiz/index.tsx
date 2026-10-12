@@ -25,7 +25,7 @@ export default function Quiz() {
   const [favSet, setFavSet] = useState<Set<string>>(new Set());
 
   const loadBadges = () => api("/quiz/badges?user_id=" + USER_ID).then(setBadges).catch(() => {});
-  useEffect(() => { loadBadges(); }, []);
+  useEffect(() => { loadBadges(); start(); }, []);  // 进页即选题（默认 practice 模式）
 
   async function start(modeOverride?: string) {
     const d = await api<{ questions: Question[] }>("/quiz/start", {
