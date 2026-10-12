@@ -78,6 +78,15 @@ class Settings:
     # 出题并行：generate_drafts 线程池 worker 数（各考点独立，IO-bound）
     quizgen_parallel_workers: int = field(default_factory=lambda: int(
         os.environ.get("QUIZGEN_PARALLEL_WORKERS", "4")))
+    # 自动铺题（文档 indexed 后覆盖驱动出题）：开关/目标/轮数/去抖窗口
+    auto_generate_on_ingest: bool = field(default_factory=lambda: os.environ.get(
+        "AUTO_GENERATE_ON_INGEST", "1") == "1")
+    auto_generate_target: int = field(default_factory=lambda: int(
+        os.environ.get("AUTO_GENERATE_TARGET", "24")))
+    auto_generate_rounds: int = field(default_factory=lambda: int(
+        os.environ.get("AUTO_GENERATE_ROUNDS", "10")))
+    auto_generate_debounce: float = field(default_factory=lambda: float(
+        os.environ.get("AUTO_GENERATE_DEBOUNCE", "3")))
     # 对抗评审：关 = 行为与旧闸门链完全一致（一键回退）
     adversarial_gate_enabled: bool = field(default_factory=lambda: os.environ.get(
         "ADVERSARIAL_GATE_ENABLED", "1") not in ("0", "false", "False"))

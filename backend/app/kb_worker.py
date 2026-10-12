@@ -96,6 +96,10 @@ class KbIngestWorker:
                                  f"{chunk_count} chunks"
                                  f"{'（OCR）' if used_ocr else ''} 已索引",
                                  job_id=job_id)
+            # 索引完成 → 自动铺题（独立执行器 + 去抖合并，失败不影响文档状态）
+            from app.quizgen_backfill import backfill_worker
+
+            backfill_worker.trigger()
             if ocr_failed:
                 # 部分页 OCR 失败：内容缺失但不判整本失败——页号写 error 列警示
                 with engine.begin() as conn:
