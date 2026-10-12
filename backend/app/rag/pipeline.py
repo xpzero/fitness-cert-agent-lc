@@ -85,6 +85,22 @@ class IngestPipeline:
     四个阶段各一个方法（ingest_markdown 编排），进度回调贯穿全链路。
     """
 
+    @staticmethod
+    def _drop_junk_chunks(chunks):  # noqa: N805
+        """滤掉纯水印/乱码块（去噪后 <60 有效字），返回 (chunks, 剔除数)。"""
+        import re
+
+        noise = re.compile(r"翻版必究|扫描全能王|心淳版权所有|\s+")
+        kept, dropped = [], 0
+        for c in chunks:
+            if len(noise.sub("", c.content)) < 60:
+                dropped += 1
+                continue
+            kept.append(c)
+        for i, c in enumerate(kept):
+            c.chunk_index = i
+        return kept, dropped
+
     def ingest_markdown(self, doc_id: str, title: str, markdown_text: str, *,
                         authority_level: int,
                         source_type: str, filename: str = "",
@@ -97,6 +113,9 @@ class IngestPipeline:
                              authority_level=authority_level,
                              max_chars=settings.chunk_max_chars,
                              overlap=settings.chunk_overlap_chars)
+        chunks, dropped = _drop_junk_chunks(chunks)
+        if dropped:
+            progress_cb and progress_cb("embed", 1, f"过滤 {dropped} 个水印/乱码块")
         if not chunks:
             raise ValueError("解析结果为空（无有效内容）")
         self._prepend_zh_summary(chunks, progress_cb)
