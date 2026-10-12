@@ -99,24 +99,28 @@ export default function Quiz() {
       {result && <ResultDash r={result} onWrong={() => { setMode("wrong_review"); start(); }} />}
 
       {q && (
-        <QuestionCard
-          q={q} sel={sel} corr={corr} rr={rr} explain={explain}
-          idx={idx} total={qs.length}
-          onPick={pick} onPrev={() => setIdx(idx - 1)} onNext={() => setIdx(idx + 1)}
-        />
-      )}
-
-      {q && result && rr && !rr.correct && (
-        <CoachPanel userId={USER_ID} questionId={q.id} />
-      )}
-
-      {qs.length > 0 && q && (
-        <SheetNav
-          qs={qs} answers={answers} idx={idx} result={result} busy={busy}
-          favOn={favSet.has(q.id)} flagged={FLAGGED.has(q.id)}
-          onJump={setIdx} onSubmit={submit}
-          onToggleFav={() => toggleFav(q.id)} onToggleFlag={() => toggleFlag(q.id)}
-        />
+        <div className="mt-3 flex items-start gap-3.5">
+          <div className="min-w-0 flex-1">
+            <QuestionCard
+              q={q} sel={sel} corr={corr} rr={rr} explain={explain}
+              idx={idx} total={qs.length}
+              onPick={pick} onPrev={() => setIdx(idx - 1)} onNext={() => setIdx(idx + 1)}
+            />
+            {q && result && rr && !rr.correct && (
+              <CoachPanel userId={USER_ID} questionId={q.id} />
+            )}
+          </div>
+          {qs.length > 0 && (
+            <div className="w-64 shrink-0">
+              <SheetNav
+                qs={qs} answers={answers} idx={idx} result={result} busy={busy}
+                favOn={favSet.has(q.id)} flagged={FLAGGED.has(q.id)}
+                onJump={setIdx} onSubmit={submit}
+                onToggleFav={() => toggleFav(q.id)} onToggleFlag={() => toggleFlag(q.id)}
+              />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
