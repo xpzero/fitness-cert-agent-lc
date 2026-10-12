@@ -17,6 +17,7 @@ export function QuizToolbar({ q, total, idx, answered, count, setCount, onStart,
   onBrowse?: () => void;
 }) {
   return (
+    <>
     <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-accent px-3.5 py-2.5">
       <Badge variant="warn">{total ? `第 ${idx + 1} / ${total} 题 · ${q ? (TYPE_LABEL[q.type] || q.type) : ""}` : "未开始"}</Badge>
       <div className="h-[7px] flex-1 overflow-hidden rounded-full bg-secondary">
@@ -33,12 +34,15 @@ export function QuizToolbar({ q, total, idx, answered, count, setCount, onStart,
           </SelectContent>
         </Select>
       )}
-      {onBrowse && (
-        <button className="cursor-pointer whitespace-nowrap text-[11px] text-primary underline-offset-2 hover:underline" onClick={onBrowse}>
-          浏览全部题目 →
-        </button>
-      )}
       {showCountSelect && <Button onClick={onStart}>开始</Button>}
     </div>
+    {onBrowse && (
+      <div className="mt-1 pl-1">
+        <button className="cursor-pointer text-[11px] text-primary underline-offset-2 hover:underline" onClick={onBrowse}>
+          浏览全部题目 →
+        </button>
+      </div>
+    )}
+    </>
   );
 }

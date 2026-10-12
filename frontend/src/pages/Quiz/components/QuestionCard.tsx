@@ -54,7 +54,7 @@ export function QuestionCard({ q, sel, corr, rr, explain, idx, total, onPick, on
   onNext: () => void;
 }) {
   return (
-    <div className="mt-3 rounded-xl border border-input bg-white p-5">
+    <div className="rounded-xl border border-input bg-white p-5">
       <div className="mb-3.5 text-[15px] font-semibold leading-7">{q.stem}</div>
       {Object.keys(q.options || {}).sort().map((k) => {
         let cls = "border-input bg-white";
