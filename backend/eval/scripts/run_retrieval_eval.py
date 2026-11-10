@@ -46,6 +46,9 @@ def main() -> int:
     import numpy as np
 
     def expand_relevant(cid: str) -> set[str]:
+        if cid not in all_vecs:
+            # 金标准引用的 chunk 已被重解析/删除（数据漂移）：跳过而非崩溃
+            return set()
         base = np.array(all_vecs[cid])
         out = {cid}
         for other, vec in all_vecs.items():
@@ -56,11 +59,17 @@ def main() -> int:
 
     hits5 = mrr = 0
     misses = []
+    skipped = []   # 期望集全部失效的用例（分母剔除，作者清洗口径同 build_golden v2）
+    measured = 0
     t0 = time.time()
     for i, case in enumerate(cases, 1):
         candidates = searcher.search(case["query"], hyde=hyde)
         ids = [c.chunk_id for c in candidates[:5]]
         relevant = set().union(*(expand_relevant(cid) for cid in case["relevant_chunk_ids"]))
+        if not relevant:
+            skipped.append(case["query"][:40])
+            continue
+        measured += 1
         rank = next((r for r, cid in enumerate(ids, 1) if cid in relevant), None)
         if rank:
             hits5 += 1
@@ -68,19 +77,23 @@ def main() -> int:
         else:
             misses.append({"query": case["query"], "expected": list(relevant),
                            "got_top3": [c.source_label for c in candidates[:3]]})
-        if i % 10 == 0:
-            print(f"  … {i}/{len(cases)}（running recall@5={hits5/i:.3f}）")
+        if measured % 10 == 0:
+            print(f"  … 已测 {measured} 条（running recall@5={hits5/measured:.3f}）", flush=True)
 
-    n = len(cases)
+    n = measured
     recall5, mrr5 = hits5 / n, mrr / n
     passed = recall5 >= GATE_RECALL_5
+    skipped_note = (f"\n> 剔除期望集全灭用例 {len(skipped)} 条："
+                    + "；".join(skipped[:5]) + ("…" if len(skipped) > 5 else "")
+                    + "\n") if skipped else ""
     report = (
         f"# 检索评测报告 {datetime.now().isoformat(timespec='seconds')}\n\n"
         f"| 指标 | 值 | 门槛 | 结果 |\n|---|---|---|---|\n"
         f"| Recall@5 | {recall5:.3f} | ≥{GATE_RECALL_5} | {'✅' if passed else '❌'} |\n"
         f"| MRR@5 | {mrr5:.3f} | - | |\n"
-        f"| 样本 | {n} 条 auto | | |\n"
+        f"| 样本 | {n} 条（金标准 {len(cases)}，剔除失效 {len(cases)-n}） | | |\n"
         f"| 平均耗时 | {time.time()-t0:.1f}s/条 {(time.time()-t0)/n:.2f}s | | |\n\n"
+        + skipped_note +
         f"## 未命中 case（{len(misses)}）\n\n" +
         "\n".join(f"- Q: {m['query']}\n  期望: {m['expected']}  实际top3: {m['got_top3']}"
                   for m in misses[:15])
