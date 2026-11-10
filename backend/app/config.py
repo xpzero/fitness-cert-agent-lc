@@ -73,9 +73,17 @@ class Settings:
     # 词面阈值分级回退：短口语查询与长文档的 word_similarity 普遍偏低，
     # 固定阈值会整级空手而归（前端表现为"点了没反应"）
     sparse_min_sim_ladder: tuple = (0.5, 0.35, 0.2)
-    # 精排（cross-encoder）：开关 / 模型 / 粗召回窗口 / 精排后取数
+    # 精排（cross-encoder）：开关 / 后端 / 模型 / 粗召回窗口 / 精排后取数
     rerank_enabled: bool = field(default_factory=lambda: os.environ.get(
         "RERANK_ENABLED", "1") not in ("0", "false", "False"))
+    # backend=local 走 fastembed ONNX（模型名带 -int8）；api 走硅基流动 /rerank
+    # （免本地加载；key 缺省沿用 EMBED_API_KEY——同厂商）
+    rerank_backend: str = field(
+        default_factory=lambda: os.environ.get("RERANK_BACKEND", "local"))
+    rerank_api_base_url: str = field(default_factory=lambda: os.environ.get(
+        "RERANK_API_BASE_URL", "https://api.siliconflow.cn/v1"))
+    rerank_api_key: str = field(default_factory=lambda: os.environ.get(
+        "RERANK_API_KEY", "") or os.environ.get("EMBED_API_KEY", ""))
     rerank_model: str = field(default_factory=lambda: os.environ.get(
         "RERANK_MODEL", "BAAI/bge-reranker-v2-m3-int8"))
     rerank_pool: int = field(default_factory=lambda: int(
