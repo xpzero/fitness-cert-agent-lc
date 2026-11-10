@@ -32,3 +32,7 @@ services:
 
 volumes:
   pgdata:
+    # 卷名钉死：目录曾从 fitness-cert-agent 改名为 -lc，compose 自动命名随之改变
+    # 起了空卷导致"数据丢失"。显式指回旧卷（9.4万 chunk 语料所在），
+    # 以后目录改名不再受影响。空的 fitness-cert-agent-lc_pgdata 卷可手动删除。
+    name: fitness-cert-agent_pgdata
