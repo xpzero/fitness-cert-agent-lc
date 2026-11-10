@@ -34,8 +34,8 @@ ingest:           ## 语料入库（chunk → embedding → pgvector）
 eval-golden:       ## 自动构建检索金标准集
 	cd backend && .venv/bin/python eval/scripts/build_golden.py
 
-eval-retrieval:   ## 检索评测（门槛 Recall@5 ≥ 0.75）
-	cd backend && .venv/bin/python eval/scripts/run_retrieval_eval.py
+eval-retrieval:   ## 检索评测（v2 金标准 112 条，门槛 Recall@5 ≥ 0.75；CI 用 auto 种子集）
+	cd backend && .venv/bin/python eval/scripts/run_retrieval_eval.py --golden rag_qa_v2.jsonl
 
 eval-adversarial: ## 对抗评审评测（门槛 捕获 ≥0.70、误伤 ≤0.20，需 LLM key）
 	cd backend && .venv/bin/python eval/scripts/run_adversarial_eval.py

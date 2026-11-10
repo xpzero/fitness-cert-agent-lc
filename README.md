@@ -9,12 +9,12 @@ LangGraph 多子图 + 溯源 RAG，面向健身教练国际四大认证备考（
 - **Agent**：LangGraph · LangChain
 - **后端**：FastAPI · PostgreSQL/pgvector · SQLAlchemy
 - **模型**：智谱 GLM-4.6 / GLM-4-flash（OpenAI 兼容协议，可换厂商）
-- **Embedding**：BAAI/bge-small-zh（fastembed 本地 ONNX）
-- **Reranker**：BAAI/bge-reranker-v2-m3-int8（cross-encoder 精排）
+- **Embedding**：BAAI/bge-m3（硅基流动 API，1024 维多语言，中英互检；EMBED_BACKEND=local 可回退 fastembed 本地 ONNX）
+- **Reranker**：BAAI/bge-reranker-v2-m3（硅基流动 /rerank API，与 embedding 同族；可回退本地 ONNX int8）
 - **前端**：React + TypeScript · Tailwind CSS + shadcn/ui
 - **可观测**：Langfuse（自托管，全链路 trace）
 - **OCR**：macOS Vision（扫描 PDF 逐页识别）+ PyMuPDF
-- **工程**：GitHub Actions CI（单测 + 评测门槛）· Docker Compose · uv / pnpm
+- **工程**：GitHub Actions CI（单测含 pgvector service + 评测门槛；retrieval-gate 需在仓库 secrets 配 `EMBED_API_KEY`——硅基流动免费档）· Docker Compose（卷名钉死防目录改名丢数据）· uv / pnpm
 
 ## 快速开始
 
@@ -62,7 +62,7 @@ graph TB
     PGVEC -.- LF["Langfuse 全链路追踪"]
 ```
 
-评测门槛（2026-10-12 实测）：检索 Recall@5 ≥0.75（当前 **0.545**，112 条全库分层金标准；优化轨迹：基线 0.425 → +rerank 0.475 → +chunk 前缀 **0.545**）· 意图路由准确率 ≥0.92（当前 **0.919**）· 出题逐字 grounding ≥0.9（拒绝线）· 质量闸 ≥4/5（拒绝线）· 对抗评审坏题捕获 ≥0.70 且误伤 ≤0.20（当前 **0.70 / ≤0.20** ✅，rubric 基线 0.10）· 引用正确率 ≥0.95（金标准 100 条已建，受检索基线拖累未达标）
+评测门槛（2026-11-10 实测）：检索 Recall@5 ≥0.75（当前 **0.920** ✅，112 条全库金标准；轨迹：bge-small-zh 0.545 → **bge-m3 多语言** 0.696 → 金标准清洗 26 条假阴性标签 **0.920**）· 意图路由准确率 ≥0.92（当前 **0.919**）· 出题逐字 grounding ≥0.9（拒绝线）· 质量闸 ≥4/5（拒绝线）· 对抗评审坏题捕获 ≥0.70 且误伤 ≤0.20（当前 **0.70 / ≤0.20** ✅，rubric 基线 0.10）· 引用正确率 ≥0.95（金标准 100 条已建，受检索基线拖累未达标）
 
 ## 结构
 
@@ -106,7 +106,7 @@ docker-compose.yml # PostgreSQL(pgvector) + Langfuse
 - **评测中心**（Web 页）：四套金标准用例库化（可增删改/jsonl 导入导出）、后台评测任务（进度持久化，重启可查）、门槛卡片与历史、一键运行全部。
 - **设置中心**（Web 页）：提示词与路由词表在线编辑（DB 覆盖层，占位符校验防损坏，删除即回默认），路由词表改动即时生效。
 - **自动铺题**：文档索引完成后自动按覆盖驱动出题（独立执行器 + 去抖合并 + 失败隔离），持续补题库。
-- **检索两阶段**：混合检索粗召回 top30 → bge-reranker-v2-m3 cross-encoder 精排取 top5（可配置关闭）；chunk 嵌入带【书名·章节】上下文前缀。
+- **检索两阶段**：混合检索粗召回 top30 → bge-reranker-v2-m3 cross-encoder 精排取 top5（API 后端默认开，延迟 ~0.5s/查询；本地 ONNX 可回退）；chunk 嵌入带【书名·章节】上下文前缀。
 
 **本机端口约定（8000/5432 被系统占用）：** 前端=5173（dev 与 preview，API 经 vite 代理到 8770），API=8770（独立进程，不托管前端），DB=5433，Langfuse=3000
 **Langfuse：** 密钥在 .env；测试 trace `smoke-p0-001` 可在面板中查到
@@ -115,5 +115,5 @@ docker-compose.yml # PostgreSQL(pgvector) + Langfuse
 
 - **题库扩容**：当前 verified 题量（18）远小于四大证模考规格（NSCA 155 等）——自动铺题在持续补库，题量上来后模考卷自然达到规格。
 - **考点大纲校准**：`knowledge/syllabus/nsca_cpt.yaml` 仍为 draft 初稿（按公开考试领域手工整理、权重为估计值）；NASM 全套教材已入库，应按教材目录（TOC）校准考点树与权重——exam_points 是覆盖分析（pick_points）的地基。
-- **检索继续调优**（当前 0.545 → 目标 0.75）：多语言 embedding 受限（e5-large CPU 吞吐不可用、MiniLM 区分度不足已回滚），候选路径为 GPU 环境重嵌入或语料瘦身；剩余 miss 中约半数为长口语问句与细节型问题（改写增强的靶子）。
-- **金标准继续清洗**：v2 金标准（120→112 条）中仍存少量期望集指向低质量 OCR chunk 的用例，需人工抽检剔除。
+- **检索剩余 miss 收尾**（0.920 后剩 ~9 条）：全库金标准清洗后剩余 miss 集中在细节型数字题（"风险是多少倍""组数×次数"）与 auto 拼接错题——改写增强（rewrite_query 补数字/实体精确化）是对症的下一刀。
+- **引用评测复测**：检索基线 0.545→0.920 后，引用正确率门槛（≥0.95）应重跑一次（此前受检索拖累未达标）。
