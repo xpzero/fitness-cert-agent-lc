@@ -31,6 +31,8 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql+psycopg://fitness:fitness@localhost:5433/fitness
+      # 拓扑测试建图时构造 LLM 客户端需要非空 key（不发真实调用，LLM 均已 mock）
+      LLM_API_KEY: ci-dummy
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

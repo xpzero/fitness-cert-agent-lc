@@ -31,6 +31,15 @@ def _fake_report(**over):
     return base
 
 
+def _isolated_synth(**over):
+    """隔离 synthesize 的真实 LLM 调用（chat_json 未被 make_model mock 覆盖；
+    无 key/无网环境下会走 degraded 兜底，单测必须与网络无关）。"""
+    canned = {"findings": over.pop("findings", []), "suggestions": ["补练"]}
+    canned.update(over)
+    return mock.patch("app.graphs.diagnosis.graph.llm_client.chat_json",
+                      return_value=canned)
+
+
 class TestDiagnosisSSEEvents(unittest.TestCase):
     def _graph(self):
         import app.graphs.diagnosis.graph as dg
@@ -47,7 +56,7 @@ class TestDiagnosisSSEEvents(unittest.TestCase):
             return dg.build_diagnosis_graph("u1", "")
 
     def test_step_events_match_legacy_format(self):
-        with mock.patch(
+        with _isolated_synth(), mock.patch(
                 "app.graphs.diagnosis.graph.finalize_report",
                 side_effect=lambda state, u, c="": _fake_report()) as fr:
             events = _run(self._graph())
@@ -69,7 +78,8 @@ class TestDiagnosisSSEEvents(unittest.TestCase):
         # synthesize 产出的 report 进入 finalize（plan_adjust 应用等）
         import app.graphs.diagnosis.graph as dg
 
-        with mock.patch.object(dg, "finalize_report",
+        with _isolated_synth(), \
+             mock.patch.object(dg, "finalize_report",
                                side_effect=lambda state, u, c="":
                                _fake_report(degraded=state.get("degraded"))):
             events = _run(self._graph())
@@ -89,7 +99,7 @@ class TestDiagnosisSSEEvents(unittest.TestCase):
 
     def test_step_json_serializable(self):
         # SSE 帧最终走 json.dumps：step 字段必须可序列化
-        with mock.patch(
+        with _isolated_synth(), mock.patch(
                 "app.graphs.diagnosis.graph.finalize_report",
                 side_effect=lambda s, u, c="": _fake_report()):
             events = _run(self._graph())

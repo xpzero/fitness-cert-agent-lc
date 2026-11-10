@@ -98,7 +98,25 @@ class TestTutorEndToEndFakeModel(unittest.TestCase):
     """ScriptedToolCallModel 驱动原生环：多工具连续调用 + 出环收尾。"""
 
     def test_run_tutor_multi_tool_loop(self):
+        # 工具用轻量假实现（真工具会建子图/打真库——本测试只验环机制与收尾，
+        # 工具行为由各自的测试覆盖），保证无 key/无网可跑
         from langchain_core.messages import AIMessage
+        from langchain_core.tools import tool as lc_tool
+
+        @lc_tool
+        def diagnose() -> str:
+            """学情诊断"""
+            return "发现：第3章正确率 40%"
+
+        @lc_tool
+        def plan_state() -> str:
+            """当前计划"""
+            return "计划：第4周，第3章待补"
+
+        @lc_tool
+        def qa_answer(query: str) -> str:
+            """教材问答"""
+            return f"[qa] {query}：答案（带出处）"
 
         model = ScriptedToolCallModel([
             AIMessage(content="", tool_calls=[
@@ -111,6 +129,9 @@ class TestTutorEndToEndFakeModel(unittest.TestCase):
         ])
         with mock.patch.object(
                 tutor, "make_model", return_value=model), \
+             mock.patch.object(
+                tutor, "build_tutor_tools",
+                return_value=[diagnose, plan_state, qa_answer]), \
              mock.patch.object(
                 llm_client, "chat_json",
                 return_value={"reply": "先补第3章，我出了道题给你"}):
