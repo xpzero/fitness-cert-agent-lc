@@ -42,7 +42,15 @@ class Settings:
         )
     )
 
-    # Embedding（本地 ONNX，免 key；曾有的 zhipu API 后端因无配额已移除）
+    # Embedding：backend=local 走 fastembed ONNX（免 key）；backend=api 走
+    # OpenAI 兼容 /embeddings（硅基流动免费 BAAI/bge-m3，1024 维多语言）。
+    # 换 api 时同步改 EMBED_MODEL=BAAI/bge-m3、EMBED_DIM=1024，再跑 reembed_all
+    embed_backend: str = field(
+        default_factory=lambda: os.environ.get("EMBED_BACKEND", "local"))
+    embed_api_base_url: str = field(default_factory=lambda: os.environ.get(
+        "EMBED_API_BASE_URL", "https://api.siliconflow.cn/v1"))
+    embed_api_key: str = field(
+        default_factory=lambda: os.environ.get("EMBED_API_KEY", ""))
     embed_model: str = field(
         default_factory=lambda: os.environ.get("EMBED_MODEL", "BAAI/bge-small-zh-v1.5")
     )
