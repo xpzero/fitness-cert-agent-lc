@@ -8,11 +8,29 @@ on:
 
 jobs:
   tests:
-    name: 单元测试（判分/SM-2/RAG纯函数）
+    name: 单元测试
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
+    # coach/diagnosis/tutor/backfill 测试走真库（mock 只覆盖 LLM 层），
+    # 与 retrieval-gate 同款 pgvector service
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: fitness
+          POSTGRES_PASSWORD: fitness
+          POSTGRES_DB: fitness
+        ports:
+          - "5433:5432"
+        options: >-
+          --health-cmd "pg_isready -U fitness"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://fitness:fitness@localhost:5433/fitness
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,7 +42,7 @@ jobs:
         run: python -m unittest discover -s tests -v
 
   retrieval-gate:
-    name: 检索评测门槛（Recall@5 ≥ 0.75）
+    name: 检索评测门槛（Recall@5 ≥ 0.75，种子语料金标准 + bge-m3）
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -43,10 +61,19 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+    # 与本地/生产同构的检索配置：硅基流动 bge-m3 + reranker（EMBED_API_KEY
+    # 需在仓库 secrets 配置，免费档；rerank key 缺省沿用它）。缺 key 时
+    # Embedder 显式报错提示。金标准用 rag_qa_auto（仅种子文档，CI 可复现）；
+    # v2 全库金标准含上传语料（版权材料不入库），只能本地跑。
     env:
       DATABASE_URL: postgresql+psycopg://fitness:fitness@localhost:5433/fitness
-      EMBED_DIM: "512"
-      EMBED_MODEL: "BAAI/bge-small-zh-v1.5"
+      EMBED_BACKEND: api
+      EMBED_API_BASE_URL: https://api.siliconflow.cn/v1
+      EMBED_API_KEY: ${{ secrets.EMBED_API_KEY }}
+      EMBED_MODEL: BAAI/bge-m3
+      EMBED_DIM: "1024"
+      RERANK_BACKEND: api
+      RERANK_MODEL: BAAI/bge-reranker-v2-m3
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,7 +81,7 @@ jobs:
           python-version: "3.12"
       - name: 安装依赖
         run: pip install -e .
-      - name: 语料入库（本地 embedding，无需 LLM key）
+      - name: 语料入库（种子 md 为中文，无 LLM 摘要调用，无需 LLM key）
         run: python scripts/ingest.py
       - name: 检索评测（--no-hyde：CI 无 LLM key；阈值不达标则失败）
         run: python eval/scripts/run_retrieval_eval.py --no-hyde

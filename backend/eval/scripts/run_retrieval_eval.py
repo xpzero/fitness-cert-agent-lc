@@ -81,6 +81,9 @@ def main() -> int:
             print(f"  … 已测 {measured} 条（running recall@5={hits5/measured:.3f}）", flush=True)
 
     n = measured
+    if n == 0:
+        print("无可测量用例：金标准期望集在库中全部失效（语料未入库或金标准不匹配）")
+        return 1
     recall5, mrr5 = hits5 / n, mrr / n
     passed = recall5 >= GATE_RECALL_5
     skipped_note = (f"\n> 剔除期望集全灭用例 {len(skipped)} 条："
